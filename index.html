@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- Meta tags para iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Controle de Gado">
+    
+    <!-- Prevenção de zoom ao focar inputs no iOS -->
+    <meta name="format-detection" content="telephone=no">
+    
+    <title>Controle de Gado</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Cabeçalho do App -->
+    <header class="app-header">
+        <h1>Controle de Gado</h1>
+    </header>
+
+    <!-- Navegação Principal -->
+    <nav class="main-nav">
+        <button class="nav-btn active" data-section="pasto">
+            <span class="icon">Pastos</span>
+        </button>
+        <button class="nav-btn" data-section="prenhez">
+            <span class="icon">Prenhez</span>
+        </button>
+        <button class="nav-btn" data-section="doenca">
+            <span class="icon">Doenças</span>
+        </button>
+        <button class="nav-btn" data-section="historico">
+            <span class="icon">Histórico</span>
+        </button>
+    </nav>
+
+    <!-- Conteúdo Principal -->
+    <main class="app-content">
+        
+        <!-- Seção: Pastos -->
+        <section id="pasto" class="section active">
+            <div class="section-header">
+                <h2>Gerenciar Pastos</h2>
+                <button class="btn-primary btn-add" data-action="adicionar-pasto">
+                    + Adicionar Pasto
+                </button>
+            </div>
+            
+            <div class="lista-pastos">
+                <!-- Os pastos serão inseridos aqui via JavaScript -->
+                <div class="empty-state">
+                    <p>Nenhum pasto cadastrado ainda</p>
+                    <p class="hint">Clique em "+ Adicionar Pasto" para começar</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção: Prenhez -->
+        <section id="prenhez" class="section">
+            <div class="section-header">
+                <h2>Controle de Prenhez</h2>
+                <button class="btn-primary btn-add" data-action="adicionar-prenhez">
+                    + Registrar Prenhez
+                </button>
+            </div>
+            
+            <div class="lista-prenhez">
+                <div class="empty-state">
+                    <p>Nenhuma prenhez registrada</p>
+                    <p class="hint">Clique em "+ Registrar Prenhez" para começar</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção: Doenças -->
+        <section id="doenca" class="section">
+            <div class="section-header">
+                <h2>Controle de Doenças</h2>
+                <button class="btn-primary btn-add" data-action="adicionar-doenca">
+                    + Registrar Doença
+                </button>
+            </div>
+            
+            <div class="lista-doencas">
+                <div class="empty-state">
+                    <p>Nenhuma doença registrada</p>
+                    <p class="hint">Clique em "+ Registrar Doença" para começar</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção: Histórico -->
+        <section id="historico" class="section">
+            <div class="section-header">
+                <h2>Histórico Geral</h2>
+                <div class="filtros-historico">
+                    <select class="select-filtro" id="filtro-tipo">
+                        <option value="todos">Todos</option>
+                        <option value="pasto">Pastos</option>
+                        <option value="prenhez">Prenhez</option>
+                        <option value="doenca">Doenças</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="lista-historico">
+                <div class="empty-state">
+                    <p>Nenhum registro no histórico</p>
+                    <p class="hint">Suas anotações aparecerão aqui</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal para Formulários -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Formulário</h3>
+                <button class="btn-close" id="modal-close">✕</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Conteúdo do formulário será inserido aqui -->
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Modules -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
