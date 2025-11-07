@@ -40,19 +40,26 @@ export function renderizarListaPastos() {
 
 /* Cria o HTML de um card de pasto */
 function criarCardPasto(pasto) {
-    const quantidadeAnimais = pasto.quantidadeAnimais || 0;
-    const area = pasto.area || 'Não informada';
+    const grandes = pasto.animaisGrandes || 0;
+    const pequenos = pasto.animaisPequenos || 0;
+    const total = grandes + pequenos;
     
     return `
         <div class="card" data-id="${pasto.id}">
             <div class="card-header">
                 <h3 class="card-title">${pasto.nome}</h3>
-                <span class="card-badge">${quantidadeAnimais} animais</span>
+                <span class="card-badge">${total} animais</span>
             </div>
             <div class="card-body">
                 <div class="card-info">
                     <div class="card-info-item">
-                        <strong>Área:</strong> ${area} hectares
+                        <strong>Grandes (Vacas):</strong> ${grandes}
+                    </div>
+                    <div class="card-info-item">
+                        <strong>Pequenos (Bezerros):</strong> ${pequenos}
+                    </div>
+                    <div class="card-info-item">
+                        <strong>Total:</strong> ${total} animais
                     </div>
                     ${pasto.observacoes ? `
                         <div class="card-info-item">
@@ -60,7 +67,7 @@ function criarCardPasto(pasto) {
                         </div>
                     ` : ''}
                     <div class="card-info-item">
-                        <strong>Cadastrado em:</strong> ${formatarData(pasto.dataCriacao)}
+                        <strong>Última atualização:</strong> ${formatarData(pasto.dataAtualizacao || pasto.dataCriacao)}
                     </div>
                 </div>
             </div>
@@ -111,25 +118,26 @@ function mostrarFormularioAdicionar() {
             </div>
             
             <div class="form-group">
-                <label class="form-label" for="area-pasto">Área (hectares)</label>
+                <label class="form-label" for="qtd-grandes">Animais Grandes (Vacas)</label>
                 <input 
                     type="number" 
-                    id="area-pasto" 
+                    id="qtd-grandes" 
                     class="form-input" 
-                    placeholder="Ex: 10"
-                    step="0.1"
+                    placeholder="Ex: 30"
                     min="0"
+                    value="0"
                 >
             </div>
             
             <div class="form-group">
-                <label class="form-label" for="qtd-animais">Quantidade de Animais</label>
+                <label class="form-label" for="qtd-pequenos">Animais Pequenos (Bezerros)</label>
                 <input 
                     type="number" 
-                    id="qtd-animais" 
+                    id="qtd-pequenos" 
                     class="form-input" 
-                    placeholder="Ex: 50"
+                    placeholder="Ex: 20"
                     min="0"
+                    value="0"
                 >
             </div>
             
@@ -184,24 +192,23 @@ function mostrarFormularioEditar(id) {
             </div>
             
             <div class="form-group">
-                <label class="form-label" for="area-pasto">Área (hectares)</label>
+                <label class="form-label" for="qtd-grandes">Animais Grandes (Vacas)</label>
                 <input 
                     type="number" 
-                    id="area-pasto" 
+                    id="qtd-grandes" 
                     class="form-input" 
-                    value="${pasto.area || ''}"
-                    step="0.1"
+                    value="${pasto.animaisGrandes || 0}"
                     min="0"
                 >
             </div>
             
             <div class="form-group">
-                <label class="form-label" for="qtd-animais">Quantidade de Animais</label>
+                <label class="form-label" for="qtd-pequenos">Animais Pequenos (Bezerros)</label>
                 <input 
                     type="number" 
-                    id="qtd-animais" 
+                    id="qtd-pequenos" 
                     class="form-input" 
-                    value="${pasto.quantidadeAnimais || ''}"
+                    value="${pasto.animaisPequenos || 0}"
                     min="0"
                 >
             </div>
@@ -238,17 +245,19 @@ function salvarNovoPasto(e) {
     
     const dadosPasto = {
         nome: document.getElementById('nome-pasto').value.trim(),
-        area: parseFloat(document.getElementById('area-pasto').value) || null,
-        quantidadeAnimais: parseInt(document.getElementById('qtd-animais').value) || 0,
+        animaisGrandes: parseInt(document.getElementById('qtd-grandes').value) || 0,
+        animaisPequenos: parseInt(document.getElementById('qtd-pequenos').value) || 0,
         observacoes: document.getElementById('observacoes-pasto').value.trim()
     };
+    
+    const total = dadosPasto.animaisGrandes + dadosPasto.animaisPequenos;
     
     if (adicionarItem(CHAVES_STORAGE.PASTOS, dadosPasto)) {
         fecharModal();
         renderizarListaPastos();
         
         /* Adiciona ao histórico */
-        registrarNoHistorico('pasto', `Pasto "${dadosPasto.nome}" cadastrado`);
+        registrarNoHistorico('pasto', `Pasto "${dadosPasto.nome}" cadastrado (${dadosPasto.animaisGrandes} grandes, ${dadosPasto.animaisPequenos} pequenos)`);
     } else {
         alert('Erro ao salvar pasto. Tente novamente.');
     }
@@ -261,19 +270,37 @@ function atualizarPasto(e) {
     const form = e.target;
     const id = form.dataset.id;
     
+    /* Busca os dados atuais do pasto */
+    const pastos = carregarDados(CHAVES_STORAGE.PASTOS);
+    const pastoAtual = pastos.find(p => p.id === id);
+    
+    const animaisGrandes = parseInt(document.getElementById('qtd-grandes').value) || 0;
+    const animaisPequenos = parseInt(document.getElementById('qtd-pequenos').value) || 0;
+    
+    /* Verifica se houve mudança na quantidade de animais */
+    const mudouAnimais = pastoAtual && (
+        pastoAtual.animaisGrandes !== animaisGrandes ||
+        pastoAtual.animaisPequenos !== animaisPequenos
+    );
+    
     const dadosAtualizados = {
         nome: document.getElementById('nome-pasto').value.trim(),
-        area: parseFloat(document.getElementById('area-pasto').value) || null,
-        quantidadeAnimais: parseInt(document.getElementById('qtd-animais').value) || 0,
+        animaisGrandes: animaisGrandes,
+        animaisPequenos: animaisPequenos,
         observacoes: document.getElementById('observacoes-pasto').value.trim()
     };
+    
+    /* Só atualiza a data se mudou o número de animais */
+    if (mudouAnimais) {
+        dadosAtualizados.dataAtualizacao = new Date().toISOString();
+    }
     
     if (atualizarItem(CHAVES_STORAGE.PASTOS, id, dadosAtualizados)) {
         fecharModal();
         renderizarListaPastos();
         
         /* Adiciona ao histórico */
-        registrarNoHistorico('pasto', `Pasto "${dadosAtualizados.nome}" atualizado`);
+        registrarNoHistorico('pasto', `Pasto "${dadosAtualizados.nome}" atualizado (${dadosAtualizados.animaisGrandes} grandes, ${dadosAtualizados.animaisPequenos} pequenos)`);
     } else {
         alert('Erro ao atualizar pasto. Tente novamente.');
     }
