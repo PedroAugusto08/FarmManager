@@ -70,6 +70,9 @@ body {
     /* Permite rolagem normal da página */
     overflow-x: hidden;
     min-height: 100vh;
+    /* Bloqueia gesto horizontal de navegação causar pan da página */
+    touch-action: pan-y;
+    overscroll-behavior-x: contain;
 }
 
 /* ============================================
@@ -164,6 +167,34 @@ body {
 .section.active {
     display: block;
 }
+
+/* =============================
+   ANIMAÇÕES DE TROCA DE ABAS
+   ============================= */
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(40px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-40px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideOutLeft {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(-40px); }
+}
+@keyframes slideOutRight {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(40px); }
+}
+
+.section.anim-out-left { animation: slideOutLeft 0.25s ease forwards; }
+.section.anim-out-right { animation: slideOutRight 0.25s ease forwards; }
+.section.anim-in-left { animation: slideInLeft 0.25s ease forwards; }
+.section.anim-in-right { animation: slideInRight 0.25s ease forwards; }
+
+/* Durante animação, mantém layout estável */
+.section.animating { position: relative; }
 
 @keyframes fadeIn {
     from {

@@ -48,32 +48,53 @@ function configurarNavegacao() {
 }
 
 /* Muda para uma seção específica - @param secaoId: ID da seção a ser exibida */
+let animando = false;
 function mudarSecao(secaoId) {
-    /* Remove classe 'active' de todos os botões e seções */
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    document.querySelectorAll('.section').forEach(secao => {
-        secao.classList.remove('active');
-    });
-    
-    /* Adiciona classe 'active' ao botão e seção selecionados */
+    if (animando) return; /* evita disparos múltiplos */
+    const secoes = ['pasto', 'prenhez', 'doenca', 'historico'];
+    const atual = document.querySelector('.section.active');
+    const alvo = document.getElementById(secaoId);
+    if (!alvo || atual === alvo) return;
+
+    const idxAtual = atual ? secoes.indexOf(atual.id) : 0;
+    const idxAlvo = secoes.indexOf(secaoId);
+    const indoParaFrente = idxAlvo > idxAtual;
+
+    /* Botões */
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     const botaoAtivo = document.querySelector(`[data-section="${secaoId}"]`);
-    const secaoAtiva = document.getElementById(secaoId);
-    
-    if (botaoAtivo) {
-        botaoAtivo.classList.add('active');
+    if (botaoAtivo) botaoAtivo.classList.add('active');
+
+    /* Preparar animações */
+    animando = true;
+    if (atual) {
+        atual.classList.remove('active');
+        atual.classList.add('animating', indoParaFrente ? 'anim-out-left' : 'anim-out-right');
     }
-    
-    if (secaoAtiva) {
-        secaoAtiva.classList.add('active');
+    alvo.classList.add('animating', indoParaFrente ? 'anim-in-right' : 'anim-in-left');
+    alvo.classList.add('active');
+
+    function limpar(secao) {
+        if (!secao) return;
+        secao.classList.remove('anim-out-left','anim-out-right','anim-in-left','anim-in-right','animating');
     }
-    
-    /* Atualiza o conteúdo da seção se for histórico */
-    if (secaoId === 'historico') {
-        Historico.renderizarHistorico();
+
+    let terminou = 0;
+    function fimAnimacao(e) {
+        terminou++;
+        if (terminou >= (atual ? 2 : 1)) {
+            limpar(atual);
+            limpar(alvo);
+            animando = false;
+            if (secaoId === 'historico') {
+                Historico.renderizarHistorico();
+            }
+            atual?.removeEventListener('animationend', fimAnimacao);
+            alvo.removeEventListener('animationend', fimAnimacao);
+        }
     }
+    atual?.addEventListener('animationend', fimAnimacao);
+    alvo.addEventListener('animationend', fimAnimacao);
 }
 
 /* Configura eventos do modal */
@@ -142,7 +163,7 @@ function configurarSwipeSeções() {
             return;
         }
         /* Quando horizontal começa a predominar, previne scroll lateral da página */
-        if (dx > 10 && dy <= restraintY) {
+        if (dx > 5 && dx > dy && dy <= restraintY) {
             /* somente se não for gesto na borda */
             if (!pertoDaBorda) {
                 if (e.cancelable) e.preventDefault();
