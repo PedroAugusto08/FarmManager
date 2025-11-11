@@ -2,6 +2,14 @@
 
 import { CHAVES_STORAGE, adicionarItem, carregarDados, atualizarItem, removerItem } from './storage.js';
 
+/* Obtém o nome do pasto a partir do id */
+function obterNomePasto(pastoId) {
+    if (!pastoId) return null;
+    const pastos = carregarDados(CHAVES_STORAGE.PASTOS);
+    const p = pastos.find(x => x.id === pastoId);
+    return p ? p.nome : null;
+}
+
 /* Inicializa o módulo de prenhez */
 export function inicializar() {
     renderizarListaPrenhez();
@@ -44,6 +52,7 @@ export function renderizarListaPrenhez() {
 function criarCardPrenhez(registro) {
     const diasRestantes = calcularDiasRestantes(registro.dataPrevisaoParto);
     const statusClass = diasRestantes <= 30 ? 'badge-urgente' : '';
+    const nomePasto = obterNomePasto(registro.pastoId);
     
     return `
         <div class="card" data-id="${registro.id}">
@@ -64,6 +73,11 @@ function criarCardPrenhez(registro) {
                     <div class="card-info-item">
                         <strong>Previsão de Parto:</strong> ${formatarData(registro.dataPrevisaoParto)}
                     </div>
+                    ${nomePasto ? `
+                        <div class="card-info-item">
+                            <strong>Pasto:</strong> ${nomePasto}
+                        </div>
+                    ` : ''}
                     ${registro.observacoes ? `
                         <div class="card-info-item">
                             <strong>Obs:</strong> ${registro.observacoes}
@@ -102,6 +116,10 @@ function adicionarEventosCards() {
 
 /* Mostra o formulário para adicionar nova prenhez */
 function mostrarFormularioAdicionar() {
+    const pastos = carregarDados(CHAVES_STORAGE.PASTOS);
+    const options = pastos.length
+        ? pastos.map(p => `<option value="${p.id}">${p.nome}</option>`).join('')
+        : '<option value="">Nenhum pasto cadastrado</option>';
     const formularioHTML = `
         <form id="form-prenhez">
             <div class="form-group">
@@ -113,6 +131,15 @@ function mostrarFormularioAdicionar() {
                     placeholder="Ex: Nº 123, Nome, Brinco, etc."
                     required
                 >
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="pasto-id">Pasto</label>
+                <select id="pasto-id" class="select-filtro" ${pastos.length ? '' : 'disabled'}>
+                    <option value="">Selecione um pasto</option>
+                    ${options}
+                </select>
+                ${pastos.length ? '' : '<p class="hint">Cadastre um pasto para vincular</p>'}
             </div>
             
             <div class="form-group">
@@ -185,6 +212,10 @@ function mostrarFormularioEditar(id) {
         return;
     }
     
+    const pastos = carregarDados(CHAVES_STORAGE.PASTOS);
+    const options = pastos.length
+        ? pastos.map(p => `<option value="${p.id}" ${registro.pastoId === p.id ? 'selected' : ''}>${p.nome}</option>`).join('')
+        : '<option value="">Nenhum pasto cadastrado</option>';
     const formularioHTML = `
         <form id="form-prenhez" data-id="${id}">
             <div class="form-group">
@@ -196,6 +227,15 @@ function mostrarFormularioEditar(id) {
                     value="${registro.identificacaoVaca}"
                     required
                 >
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="pasto-id">Pasto</label>
+                <select id="pasto-id" class="select-filtro" ${pastos.length ? '' : 'disabled'}>
+                    <option value="">Selecione um pasto</option>
+                    ${options}
+                </select>
+                ${pastos.length ? '' : '<p class="hint">Cadastre um pasto para vincular</p>'}
             </div>
             
             <div class="form-group">
@@ -278,7 +318,8 @@ function salvarNovaPrenhez(e) {
         identificacaoTouro: document.getElementById('id-touro').value.trim(),
         dataCobertura: document.getElementById('data-cobertura').value,
         dataPrevisaoParto: document.getElementById('data-parto').value,
-        observacoes: document.getElementById('observacoes-prenhez').value.trim()
+        observacoes: document.getElementById('observacoes-prenhez').value.trim(),
+        pastoId: (document.getElementById('pasto-id') && document.getElementById('pasto-id').value) || null
     };
     
     if (adicionarItem(CHAVES_STORAGE.PRENHEZ, dadosPrenhez)) {
@@ -302,7 +343,8 @@ function atualizarPrenhez(e) {
         identificacaoTouro: document.getElementById('id-touro').value.trim(),
         dataCobertura: document.getElementById('data-cobertura').value,
         dataPrevisaoParto: document.getElementById('data-parto').value,
-        observacoes: document.getElementById('observacoes-prenhez').value.trim()
+        observacoes: document.getElementById('observacoes-prenhez').value.trim(),
+        pastoId: (document.getElementById('pasto-id') && document.getElementById('pasto-id').value) || null
     };
     
     if (atualizarItem(CHAVES_STORAGE.PRENHEZ, id, dadosAtualizados)) {

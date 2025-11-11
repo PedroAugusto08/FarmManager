@@ -21,7 +21,19 @@ function configurarEventos() {
 export function renderizarListaPastos() {
     const container = document.querySelector('.lista-pastos');
     const pastos = carregarDados(CHAVES_STORAGE.PASTOS);
-    
+    const prenhezes = carregarDados(CHAVES_STORAGE.PRENHEZ);
+    const doencas = carregarDados(CHAVES_STORAGE.DOENCAS);
+
+    /* Monta mapas de contagem por pastoId */
+    const mapaPrenhez = prenhezes.reduce((acc, reg) => {
+        if (reg.pastoId) acc[reg.pastoId] = (acc[reg.pastoId] || 0) + 1;
+        return acc;
+    }, {});
+    const mapaDoencas = doencas.reduce((acc, reg) => {
+        if (reg.pastoId) acc[reg.pastoId] = (acc[reg.pastoId] || 0) + 1;
+        return acc;
+    }, {});
+
     if (pastos.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
@@ -31,18 +43,31 @@ export function renderizarListaPastos() {
         `;
         return;
     }
-    
-    container.innerHTML = pastos.map(pasto => criarCardPasto(pasto)).join('');
-    
-    /* Adiciona eventos aos botões dos cards */
+
+    container.innerHTML = pastos.map(pasto => {
+        const qtdPrenhez = mapaPrenhez[pasto.id] || 0;
+        const qtdDoenca = mapaDoencas[pasto.id] || 0;
+        return criarCardPasto(pasto, { qtdPrenhez, qtdDoenca });
+    }).join('');
+
     adicionarEventosCards();
 }
 
 /* Cria o HTML de um card de pasto */
-function criarCardPasto(pasto) {
+function criarCardPasto(pasto, relacionados = { qtdPrenhez: 0, qtdDoenca: 0 }) {
     const grandes = pasto.animaisGrandes || 0;
     const pequenos = pasto.animaisPequenos || 0;
     const total = grandes + pequenos;
+    const { qtdPrenhez, qtdDoenca } = relacionados;
+    const temRelacionados = qtdPrenhez > 0 || qtdDoenca > 0;
+    const linhaRelacionados = temRelacionados ? `
+        <div class="card-info-item">
+            <strong>Registros:</strong>
+            ${qtdPrenhez > 0 ? `${qtdPrenhez} prenhez` : ''}
+            ${qtdPrenhez > 0 && qtdDoenca > 0 ? ' | ' : ''}
+            ${qtdDoenca > 0 ? `${qtdDoenca} doença` : ''}
+        </div>
+    ` : '';
     
     return `
         <div class="card" data-id="${pasto.id}">
@@ -66,6 +91,7 @@ function criarCardPasto(pasto) {
                             <strong>Obs:</strong> ${pasto.observacoes}
                         </div>
                     ` : ''}
+                    ${linhaRelacionados}
                     <div class="card-info-item">
                         <strong>Última atualização:</strong> ${formatarData(pasto.dataAtualizacao || pasto.dataCriacao)}
                     </div>

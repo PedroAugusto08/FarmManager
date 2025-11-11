@@ -53,10 +53,11 @@ export function atualizarItem(chave, id, dadosAtualizados) {
         return false;
     }
     
+    /* Mantém dataAtualizacao somente se fornecida externamente (controle específico por módulo) */
     dados[indice] = {
         ...dados[indice],
         ...dadosAtualizados,
-        dataAtualizacao: new Date().toISOString()
+        ...(dadosAtualizados.dataAtualizacao ? { dataAtualizacao: dadosAtualizados.dataAtualizacao } : {})
     };
     
     return salvarDados(chave, dados);

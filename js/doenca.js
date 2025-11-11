@@ -2,6 +2,14 @@
 
 import { CHAVES_STORAGE, adicionarItem, carregarDados, atualizarItem, removerItem } from './storage.js';
 
+/* Obtém o nome do pasto a partir do id */
+function obterNomePasto(pastoId) {
+    if (!pastoId) return null;
+    const pastos = carregarDados(CHAVES_STORAGE.PASTOS);
+    const p = pastos.find(x => x.id === pastoId);
+    return p ? p.nome : null;
+}
+
 /* Inicializa o módulo de doenças */
 export function inicializar() {
     renderizarListaDoencas();
@@ -48,6 +56,7 @@ function criarCardDoenca(registro) {
     const statusTexto = registro.status === 'curado' ? 'Curado' :
                        registro.status === 'tratamento' ? 'Em Tratamento' :
                        'Ativo';
+    const nomePasto = obterNomePasto(registro.pastoId);
     
     return `
         <div class="card" data-id="${registro.id}">
@@ -63,6 +72,11 @@ function criarCardDoenca(registro) {
                     <div class="card-info-item">
                         <strong>Data:</strong> ${formatarData(registro.dataRegistro)}
                     </div>
+                    ${nomePasto ? `
+                        <div class="card-info-item">
+                            <strong>Pasto:</strong> ${nomePasto}
+                        </div>
+                    ` : ''}
                     ${registro.tratamento ? `
                         <div class="card-info-item">
                             <strong>Tratamento:</strong> ${registro.tratamento}
@@ -111,6 +125,10 @@ function adicionarEventosCards() {
 
 /* Mostra o formulário para adicionar nova doença */
 function mostrarFormularioAdicionar() {
+    const pastos = carregarDados(CHAVES_STORAGE.PASTOS);
+    const options = pastos.length
+        ? pastos.map(p => `<option value="${p.id}">${p.nome}</option>`).join('')
+        : '<option value="">Nenhum pasto cadastrado</option>';
     const formularioHTML = `
         <form id="form-doenca">
             <div class="form-group">
@@ -122,6 +140,15 @@ function mostrarFormularioAdicionar() {
                     placeholder="Ex: Nº 123, Nome, Brinco, etc."
                     required
                 >
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="pasto-id">Pasto</label>
+                <select id="pasto-id" class="select-filtro" ${pastos.length ? '' : 'disabled'}>
+                    <option value="">Selecione um pasto</option>
+                    ${options}
+                </select>
+                ${pastos.length ? '' : '<p class="hint">Cadastre um pasto para vincular</p>'}
             </div>
             
             <div class="form-group">
@@ -213,6 +240,10 @@ function mostrarFormularioEditar(id) {
         return;
     }
     
+    const pastos = carregarDados(CHAVES_STORAGE.PASTOS);
+    const options = pastos.length
+        ? pastos.map(p => `<option value="${p.id}" ${registro.pastoId === p.id ? 'selected' : ''}>${p.nome}</option>`).join('')
+        : '<option value="">Nenhum pasto cadastrado</option>';
     const formularioHTML = `
         <form id="form-doenca" data-id="${id}">
             <div class="form-group">
@@ -224,6 +255,15 @@ function mostrarFormularioEditar(id) {
                     value="${registro.identificacaoAnimal}"
                     required
                 >
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="pasto-id">Pasto</label>
+                <select id="pasto-id" class="select-filtro" ${pastos.length ? '' : 'disabled'}>
+                    <option value="">Selecione um pasto</option>
+                    ${options}
+                </select>
+                ${pastos.length ? '' : '<p class="hint">Cadastre um pasto para vincular</p>'}
             </div>
             
             <div class="form-group">
@@ -313,7 +353,8 @@ function salvarNovaDoenca(e) {
         status: document.getElementById('status-doenca').value,
         tratamento: document.getElementById('tratamento').value.trim(),
         veterinario: document.getElementById('veterinario').value.trim(),
-        observacoes: document.getElementById('observacoes-doenca').value.trim()
+        observacoes: document.getElementById('observacoes-doenca').value.trim(),
+        pastoId: (document.getElementById('pasto-id') && document.getElementById('pasto-id').value) || null
     };
     
     if (adicionarItem(CHAVES_STORAGE.DOENCAS, dadosDoenca)) {
@@ -339,7 +380,8 @@ function atualizarDoenca(e) {
         status: document.getElementById('status-doenca').value,
         tratamento: document.getElementById('tratamento').value.trim(),
         veterinario: document.getElementById('veterinario').value.trim(),
-        observacoes: document.getElementById('observacoes-doenca').value.trim()
+        observacoes: document.getElementById('observacoes-doenca').value.trim(),
+        pastoId: (document.getElementById('pasto-id') && document.getElementById('pasto-id').value) || null
     };
     
     if (atualizarItem(CHAVES_STORAGE.DOENCAS, id, dadosAtualizados)) {
