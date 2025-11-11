@@ -128,7 +128,8 @@ body {
 }
 
 .nav-btn .icon {
-    font-size: var(--fonte-xl);
+    /* Texto das abas: reduzir para caber em telas menores */
+    font-size: var(--fonte-md);
     transition: transform 0.2s ease;
 }
 
@@ -631,6 +632,17 @@ button {
     .main-nav {
         max-width: 800px;
         margin: 0 auto;
+    }
+}
+
+/* Telas muito estreitas (ex.: iPhone SE) */
+@media (max-width: 360px) {
+    .nav-btn {
+        padding: var(--espacamento-xs);
+        min-height: 52px;
+    }
+    .nav-btn .icon {
+        font-size: var(--fonte-sm);
     }
 }
 

@@ -68,7 +68,7 @@ function mudarSecao(secaoId) {
     /* Preparar animações */
     animando = true;
     if (atual) {
-        atual.classList.remove('active');
+        /* Mantém 'active' durante a animação de saída para garantir que animationend dispare */
         atual.classList.add('animating', indoParaFrente ? 'anim-out-left' : 'anim-out-right');
     }
     alvo.classList.add('animating', indoParaFrente ? 'anim-in-right' : 'anim-in-left');
@@ -81,8 +81,12 @@ function mudarSecao(secaoId) {
 
     let terminou = 0;
     function fimAnimacao(e) {
+        /* Garante contagem apenas para as próprias seções */
+        if (e.target !== atual && e.target !== alvo) return;
         terminou++;
         if (terminou >= (atual ? 2 : 1)) {
+            /* Remove active da seção antiga somente após animação concluir */
+            atual?.classList.remove('active');
             limpar(atual);
             limpar(alvo);
             animando = false;
