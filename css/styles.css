@@ -151,6 +151,9 @@ body {
     padding-bottom: var(--espacamento-xl);
     max-width: 800px;
     margin: 0 auto;
+    /* Permite apenas pan vertical; evita pan horizontal da página durante swipe */
+    touch-action: pan-y;
+    overscroll-behavior-x: contain;
 }
 
 .section {

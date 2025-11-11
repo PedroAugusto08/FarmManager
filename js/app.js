@@ -110,6 +110,8 @@ function configurarSwipeSeções() {
     const threshold = 50; /* px mínimos em X */
     const restraintY = 40; /* tolerância vertical */
     let bloqueado = false;
+    let pertoDaBorda = false;
+    const edgeWidth = 24; /* ignora gesto muito nas bordas para não acionar navegação do sistema */
 
     /* Evita swipe quando o modal estiver aberto */
     const modalOverlay = document.getElementById('modal-overlay');
@@ -126,6 +128,7 @@ function configurarSwipeSeções() {
         touchStartX = t.clientX;
         touchStartY = t.clientY;
         bloqueado = false;
+        pertoDaBorda = (touchStartX <= edgeWidth) || ((window.innerWidth - touchStartX) <= edgeWidth);
     }
 
     function onTouchMove(e) {
@@ -136,12 +139,20 @@ function configurarSwipeSeções() {
         const dy = Math.abs(t.clientY - touchStartY);
         if (dy > restraintY && dy > dx) {
             bloqueado = true;
+            return;
+        }
+        /* Quando horizontal começa a predominar, previne scroll lateral da página */
+        if (dx > 10 && dy <= restraintY) {
+            /* somente se não for gesto na borda */
+            if (!pertoDaBorda) {
+                if (e.cancelable) e.preventDefault();
+            }
         }
     }
 
     function onTouchEnd(e) {
         if (modalOverlay && modalOverlay.classList.contains('active')) return;
-        if (bloqueado) return;
+        if (bloqueado || pertoDaBorda) return;
         const t = e.changedTouches ? e.changedTouches[0] : e;
         touchEndX = t.clientX;
         touchEndY = t.clientY;
@@ -162,6 +173,7 @@ function configurarSwipeSeções() {
     /* Ouvir eventos no conteúdo principal para capturar gesto em listas longas */
     const area = document.querySelector('.app-content') || document.body;
     area.addEventListener('touchstart', onTouchStart, { passive: true });
-    area.addEventListener('touchmove', onTouchMove, { passive: true });
+    /* precisa ser passive:false para poder chamar preventDefault e impedir pan-x */
+    area.addEventListener('touchmove', onTouchMove, { passive: false });
     area.addEventListener('touchend', onTouchEnd, { passive: true });
 }
