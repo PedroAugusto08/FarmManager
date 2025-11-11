@@ -67,12 +67,9 @@ body {
     background-color: var(--cor-fundo);
     color: var(--cor-texto);
     line-height: 1.6;
+    /* Permite rolagem normal da página */
     overflow-x: hidden;
-    /* Previne bounce no iOS */
-    position: fixed;
-    width: 100%;
-    height: 100vh;
-    overflow-y: auto;
+    min-height: 100vh;
 }
 
 /* ============================================

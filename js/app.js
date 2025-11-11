@@ -42,6 +42,9 @@ function configurarNavegacao() {
             mudarSecao(secaoId);
         });
     });
+
+    /* Gesto de swipe lateral para trocar de aba */
+    configurarSwipeSeções();
 }
 
 /* Muda para uma seção específica - @param secaoId: ID da seção a ser exibida */
@@ -94,3 +97,71 @@ function configurarModal() {
 
 /* Exporta função de mudança de seção para uso em outros módulos */
 export { mudarSecao };
+
+/* =============================
+   Swipe lateral entre seções
+   ============================= */
+function configurarSwipeSeções() {
+    const secoes = ['pasto', 'prenhez', 'doenca', 'historico'];
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+    const threshold = 50; /* px mínimos em X */
+    const restraintY = 40; /* tolerância vertical */
+    let bloqueado = false;
+
+    /* Evita swipe quando o modal estiver aberto */
+    const modalOverlay = document.getElementById('modal-overlay');
+
+    function indiceAtual() {
+        const ativo = document.querySelector('.section.active');
+        const id = ativo ? ativo.id : 'pasto';
+        return Math.max(0, secoes.indexOf(id));
+    }
+
+    function onTouchStart(e) {
+        if (modalOverlay && modalOverlay.classList.contains('active')) return;
+        const t = e.changedTouches ? e.changedTouches[0] : e.touches[0];
+        touchStartX = t.clientX;
+        touchStartY = t.clientY;
+        bloqueado = false;
+    }
+
+    function onTouchMove(e) {
+        /* Se houver rolagem vertical dominante, não tratar como swipe horizontal */
+        if (bloqueado) return;
+        const t = e.changedTouches ? e.changedTouches[0] : e.touches[0];
+        const dx = Math.abs(t.clientX - touchStartX);
+        const dy = Math.abs(t.clientY - touchStartY);
+        if (dy > restraintY && dy > dx) {
+            bloqueado = true;
+        }
+    }
+
+    function onTouchEnd(e) {
+        if (modalOverlay && modalOverlay.classList.contains('active')) return;
+        if (bloqueado) return;
+        const t = e.changedTouches ? e.changedTouches[0] : e;
+        touchEndX = t.clientX;
+        touchEndY = t.clientY;
+        const dx = touchEndX - touchStartX;
+        const dy = Math.abs(touchEndY - touchStartY);
+        if (Math.abs(dx) > threshold && dy <= restraintY) {
+            const idx = indiceAtual();
+            if (dx < 0 && idx < secoes.length - 1) {
+                /* swipe esquerda -> próxima aba */
+                mudarSecao(secoes[idx + 1]);
+            } else if (dx > 0 && idx > 0) {
+                /* swipe direita -> aba anterior */
+                mudarSecao(secoes[idx - 1]);
+            }
+        }
+    }
+
+    /* Ouvir eventos no conteúdo principal para capturar gesto em listas longas */
+    const area = document.querySelector('.app-content') || document.body;
+    area.addEventListener('touchstart', onTouchStart, { passive: true });
+    area.addEventListener('touchmove', onTouchMove, { passive: true });
+    area.addEventListener('touchend', onTouchEnd, { passive: true });
+}
