@@ -104,7 +104,6 @@ function mostrarModalGerenciarFazendas() {
             <div class="fazenda-item" data-id="${f.id}">
                 <div class="fazenda-info">
                     <strong>${f.nome}</strong>
-                    ${f.localizacao ? `<span class="hint">${f.localizacao}</span>` : ''}
                 </div>
                 <div class="fazenda-actions">
                     <button class="btn-mini btn-editar-fazenda" data-id="${f.id}">✏️</button>
@@ -159,25 +158,6 @@ function mostrarFormularioAdicionar() {
                 >
             </div>
             
-            <div class="form-group">
-                <label class="form-label" for="localizacao-fazenda">Localização</label>
-                <input 
-                    type="text" 
-                    id="localizacao-fazenda" 
-                    class="form-input" 
-                    placeholder="Ex: Município, Estado"
-                >
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="observacoes-fazenda">Observações</label>
-                <textarea 
-                    id="observacoes-fazenda" 
-                    class="form-textarea" 
-                    placeholder="Informações adicionais..."
-                ></textarea>
-            </div>
-            
             <div class="form-actions">
                 <button type="submit" class="btn-primary btn-submit">
                     Salvar Fazenda
@@ -220,24 +200,6 @@ function mostrarFormularioEditar(id) {
                 >
             </div>
             
-            <div class="form-group">
-                <label class="form-label" for="localizacao-fazenda">Localização</label>
-                <input 
-                    type="text" 
-                    id="localizacao-fazenda" 
-                    class="form-input" 
-                    value="${fazenda.localizacao || ''}"
-                >
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="observacoes-fazenda">Observações</label>
-                <textarea 
-                    id="observacoes-fazenda" 
-                    class="form-textarea"
-                >${fazenda.observacoes || ''}</textarea>
-            </div>
-            
             <div class="form-actions">
                 <button type="submit" class="btn-primary btn-submit">
                     Atualizar Fazenda
@@ -262,9 +224,7 @@ function salvarNovaFazenda(e) {
     e.preventDefault();
     
     const dadosFazenda = {
-        nome: document.getElementById('nome-fazenda').value.trim(),
-        localizacao: document.getElementById('localizacao-fazenda').value.trim(),
-        observacoes: document.getElementById('observacoes-fazenda').value.trim()
+        nome: document.getElementById('nome-fazenda').value.trim()
     };
     
     if (adicionarItem(CHAVES_STORAGE.FAZENDAS, dadosFazenda)) {
@@ -290,9 +250,7 @@ function atualizarFazenda(e) {
     const id = form.dataset.id;
     
     const dadosAtualizados = {
-        nome: document.getElementById('nome-fazenda').value.trim(),
-        localizacao: document.getElementById('localizacao-fazenda').value.trim(),
-        observacoes: document.getElementById('observacoes-fazenda').value.trim()
+        nome: document.getElementById('nome-fazenda').value.trim()
     };
     
     if (atualizarItem(CHAVES_STORAGE.FAZENDAS, id, dadosAtualizados)) {
