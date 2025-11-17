@@ -213,11 +213,12 @@ body {
     /* Permite apenas pan vertical; evita pan horizontal da página durante swipe */
     touch-action: pan-y;
     overscroll-behavior-x: contain;
+    position: relative;
+    min-height: calc(100vh - 180px);
 }
 
 .section {
     display: none;
-    animation: fadeIn 0.3s ease;
 }
 
 .section.active {
@@ -244,13 +245,32 @@ body {
     to { opacity: 0; transform: translateX(40px); }
 }
 
-.section.anim-out-left { animation: slideOutLeft 0.25s ease forwards; }
-.section.anim-out-right { animation: slideOutRight 0.25s ease forwards; }
-.section.anim-in-left { animation: slideInLeft 0.25s ease forwards; }
-.section.anim-in-right { animation: slideInRight 0.25s ease forwards; }
+/* Durante animação, mantém layout estável e posição absoluta para evitar saltos */
+.section.animating { 
+    display: block !important;
+    position: absolute;
+    top: var(--espacamento-md);
+    left: var(--espacamento-sm);
+    right: var(--espacamento-sm);
+    width: auto;
+}
 
-/* Durante animação, mantém layout estável */
-.section.animating { position: relative; }
+.section.anim-out-left { 
+    animation: slideOutLeft 0.25s ease forwards;
+    z-index: 1;
+}
+.section.anim-out-right { 
+    animation: slideOutRight 0.25s ease forwards;
+    z-index: 1;
+}
+.section.anim-in-left { 
+    animation: slideInLeft 0.25s ease forwards;
+    z-index: 2;
+}
+.section.anim-in-right { 
+    animation: slideInRight 0.25s ease forwards;
+    z-index: 2;
+}
 
 @keyframes fadeIn {
     from {
