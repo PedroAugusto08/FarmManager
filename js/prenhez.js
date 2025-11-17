@@ -170,22 +170,20 @@ function mostrarFormularioAdicionar() {
             </div>
             
             <div class="form-group">
-                <label class="form-label" for="data-cobertura">Data da Cobertura *</label>
+                <label class="form-label" for="data-cobertura">Data da Cobertura</label>
                 <input 
                     type="date" 
                     id="data-cobertura" 
                     class="form-input"
-                    required
                 >
             </div>
             
             <div class="form-group">
-                <label class="form-label" for="data-parto">Previsão de Parto *</label>
+                <label class="form-label" for="data-parto">Previsão de Parto</label>
                 <input 
                     type="date" 
                     id="data-parto" 
                     class="form-input"
-                    required
                 >
                 <p class="hint">Gestação média: 283 dias (9 meses e 10 dias)</p>
             </div>
@@ -266,24 +264,22 @@ function mostrarFormularioEditar(id) {
             </div>
             
             <div class="form-group">
-                <label class="form-label" for="data-cobertura">Data da Cobertura *</label>
+                <label class="form-label" for="data-cobertura">Data da Cobertura</label>
                 <input 
                     type="date" 
                     id="data-cobertura" 
                     class="form-input"
                     value="${registro.dataCobertura}"
-                    required
                 >
             </div>
             
             <div class="form-group">
-                <label class="form-label" for="data-parto">Previsão de Parto *</label>
+                <label class="form-label" for="data-parto">Previsão de Parto</label>
                 <input 
                     type="date" 
                     id="data-parto" 
                     class="form-input"
                     value="${registro.dataPrevisaoParto}"
-                    required
                 >
             </div>
             

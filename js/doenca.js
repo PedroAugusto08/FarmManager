@@ -209,16 +209,6 @@ function mostrarFormularioAdicionar() {
             </div>
             
             <div class="form-group">
-                <label class="form-label" for="veterinario">Veterinário Responsável</label>
-                <input 
-                    type="text" 
-                    id="veterinario" 
-                    class="form-input" 
-                    placeholder="Nome do veterinário"
-                >
-            </div>
-            
-            <div class="form-group">
                 <label class="form-label" for="observacoes-doenca">Observações</label>
                 <textarea 
                     id="observacoes-doenca" 
@@ -325,16 +315,6 @@ function mostrarFormularioEditar(id) {
             </div>
             
             <div class="form-group">
-                <label class="form-label" for="veterinario">Veterinário Responsável</label>
-                <input 
-                    type="text" 
-                    id="veterinario" 
-                    class="form-input" 
-                    value="${registro.veterinario || ''}"
-                >
-            </div>
-            
-            <div class="form-group">
                 <label class="form-label" for="observacoes-doenca">Observações</label>
                 <textarea 
                     id="observacoes-doenca" 
@@ -377,7 +357,6 @@ function salvarNovaDoenca(e) {
         dataRegistro: document.getElementById('data-registro').value,
         status: document.getElementById('status-doenca').value,
         tratamento: document.getElementById('tratamento').value.trim(),
-        veterinario: document.getElementById('veterinario').value.trim(),
         observacoes: document.getElementById('observacoes-doenca').value.trim(),
         pastoId: (document.getElementById('pasto-id') && document.getElementById('pasto-id').value) || null
     };
@@ -404,7 +383,6 @@ function atualizarDoenca(e) {
         dataRegistro: document.getElementById('data-registro').value,
         status: document.getElementById('status-doenca').value,
         tratamento: document.getElementById('tratamento').value.trim(),
-        veterinario: document.getElementById('veterinario').value.trim(),
         observacoes: document.getElementById('observacoes-doenca').value.trim(),
         pastoId: (document.getElementById('pasto-id') && document.getElementById('pasto-id').value) || null
     };

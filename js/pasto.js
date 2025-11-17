@@ -46,13 +46,19 @@ export function renderizarListaPastos() {
     const prenhezes = todasPrenhezes.filter(p => p.fazendaId === fazendaAtiva);
     const doencas = todasDoencas.filter(d => d.fazendaId === fazendaAtiva);
 
-    /* Monta mapas de contagem por pastoId */
+    /* Monta mapas de contagem por pastoId - usa String() para garantir compatibilidade */
     const mapaPrenhez = prenhezes.reduce((acc, reg) => {
-        if (reg.pastoId) acc[reg.pastoId] = (acc[reg.pastoId] || 0) + 1;
+        if (reg.pastoId) {
+            const id = String(reg.pastoId);
+            acc[id] = (acc[id] || 0) + 1;
+        }
         return acc;
     }, {});
     const mapaDoencas = doencas.reduce((acc, reg) => {
-        if (reg.pastoId) acc[reg.pastoId] = (acc[reg.pastoId] || 0) + 1;
+        if (reg.pastoId) {
+            const id = String(reg.pastoId);
+            acc[id] = (acc[id] || 0) + 1;
+        }
         return acc;
     }, {});
 
@@ -67,8 +73,9 @@ export function renderizarListaPastos() {
     }
 
     container.innerHTML = pastos.map(pasto => {
-        const qtdPrenhez = mapaPrenhez[pasto.id] || 0;
-        const qtdDoenca = mapaDoencas[pasto.id] || 0;
+        const pastoIdStr = String(pasto.id);
+        const qtdPrenhez = mapaPrenhez[pastoIdStr] || 0;
+        const qtdDoenca = mapaDoencas[pastoIdStr] || 0;
         return criarCardPasto(pasto, { qtdPrenhez, qtdDoenca });
     }).join('');
 
@@ -104,9 +111,6 @@ function criarCardPasto(pasto, relacionados = { qtdPrenhez: 0, qtdDoenca: 0 }) {
                     </div>
                     <div class="card-info-item">
                         <strong>Pequenos (Bezerros):</strong> ${pequenos}
-                    </div>
-                    <div class="card-info-item">
-                        <strong>Total:</strong> ${total} animais
                     </div>
                     ${pasto.observacoes ? `
                         <div class="card-info-item">
