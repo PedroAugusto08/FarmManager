@@ -197,9 +197,11 @@ function mostrarFormularioAdicionar() {
 /* Mostra o formulário para editar um pasto existente */
 function mostrarFormularioEditar(id) {
     const pastos = carregarDados(CHAVES_STORAGE.PASTOS);
-    const pasto = pastos.find(p => p.id === id);
+    /* Garante que o ID seja string para comparação consistente */
+    const pasto = pastos.find(p => String(p.id) === String(id));
     
     if (!pasto) {
+        console.error('Pasto não encontrado. ID buscado:', id, 'IDs disponíveis:', pastos.map(p => p.id));
         alert('Pasto não encontrado');
         return;
     }
