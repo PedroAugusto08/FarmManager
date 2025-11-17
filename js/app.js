@@ -1,5 +1,6 @@
 /* Arquivo principal que inicializa e coordena todos os módulos */
 
+import * as Fazenda from './fazenda.js';
 import * as Pasto from './pasto.js';
 import * as Prenhez from './prenhez.js';
 import * as Doenca from './doenca.js';
@@ -26,6 +27,7 @@ function inicializarApp() {
 
 /* Inicializa todos os módulos do aplicativo */
 function inicializarModulos() {
+    Fazenda.inicializar();
     Pasto.inicializar();
     Prenhez.inicializar();
     Doenca.inicializar();

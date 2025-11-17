@@ -1,11 +1,15 @@
 /* Módulo de Histórico - Exibe todas as ações registradas no aplicativo */
 
 import { CHAVES_STORAGE, carregarDados } from './storage.js';
+import { obterFazendaAtiva } from './fazenda.js';
 
 /* Inicializa o módulo de histórico */
 export function inicializar() {
     renderizarHistorico();
     configurarEventos();
+    
+    /* Recarrega quando a fazenda mudar */
+    window.addEventListener('fazendaAlterada', renderizarHistorico);
 }
 
 /* Configura os eventos */
@@ -19,7 +23,20 @@ function configurarEventos() {
 /* Renderiza o histórico na tela */
 export function renderizarHistorico() {
     const container = document.querySelector('.lista-historico');
-    const registros = carregarDados(CHAVES_STORAGE.HISTORICO);
+    const fazendaAtiva = obterFazendaAtiva();
+    
+    if (!fazendaAtiva) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <p>Selecione uma fazenda para visualizar o histórico</p>
+                <p class="hint">Use o seletor no topo da página</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const todosRegistros = carregarDados(CHAVES_STORAGE.HISTORICO);
+    const registros = todosRegistros.filter(r => r.fazendaId === fazendaAtiva);
     
     if (registros.length === 0) {
         container.innerHTML = `

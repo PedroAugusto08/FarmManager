@@ -1,11 +1,15 @@
 /* Módulo de Gerenciamento de Pastos - Controla adição, edição, remoção e visualização de pastos */
 
 import { CHAVES_STORAGE, adicionarItem, carregarDados, atualizarItem, removerItem } from './storage.js';
+import { obterFazendaAtiva } from './fazenda.js';
 
 /* Inicializa o módulo de pastos */
 export function inicializar() {
     renderizarListaPastos();
     configurarEventos();
+    
+    /* Recarrega quando a fazenda mudar */
+    window.addEventListener('fazendaAlterada', renderizarListaPastos);
 }
 
 /* Configura os eventos dos botões */
@@ -20,9 +24,27 @@ function configurarEventos() {
 /* Renderiza a lista de pastos na tela */
 export function renderizarListaPastos() {
     const container = document.querySelector('.lista-pastos');
-    const pastos = carregarDados(CHAVES_STORAGE.PASTOS);
-    const prenhezes = carregarDados(CHAVES_STORAGE.PRENHEZ);
-    const doencas = carregarDados(CHAVES_STORAGE.DOENCAS);
+    const fazendaAtiva = obterFazendaAtiva();
+    
+    /* Se não tem fazenda selecionada, mostra mensagem */
+    if (!fazendaAtiva) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <p>Selecione uma fazenda para visualizar os pastos</p>
+                <p class="hint">Use o seletor no topo da página</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const todosPastos = carregarDados(CHAVES_STORAGE.PASTOS);
+    const todasPrenhezes = carregarDados(CHAVES_STORAGE.PRENHEZ);
+    const todasDoencas = carregarDados(CHAVES_STORAGE.DOENCAS);
+    
+    /* Filtra pela fazenda ativa */
+    const pastos = todosPastos.filter(p => p.fazendaId === fazendaAtiva);
+    const prenhezes = todasPrenhezes.filter(p => p.fazendaId === fazendaAtiva);
+    const doencas = todasDoencas.filter(d => d.fazendaId === fazendaAtiva);
 
     /* Monta mapas de contagem por pastoId */
     const mapaPrenhez = prenhezes.reduce((acc, reg) => {
@@ -271,7 +293,15 @@ function mostrarFormularioEditar(id) {
 function salvarNovoPasto(e) {
     e.preventDefault();
     
+    const fazendaAtiva = obterFazendaAtiva();
+    
+    if (!fazendaAtiva) {
+        alert('Selecione uma fazenda antes de adicionar um pasto');
+        return;
+    }
+    
     const dadosPasto = {
+        fazendaId: fazendaAtiva,
         nome: document.getElementById('nome-pasto').value.trim(),
         animaisGrandes: parseInt(document.getElementById('qtd-grandes').value) || 0,
         animaisPequenos: parseInt(document.getElementById('qtd-pequenos').value) || 0,
@@ -385,7 +415,10 @@ function formatarData(dataISO) {
 
 /* Registra uma ação no histórico */
 function registrarNoHistorico(tipo, descricao) {
+    const fazendaAtiva = obterFazendaAtiva();
+    
     adicionarItem(CHAVES_STORAGE.HISTORICO, {
+        fazendaId: fazendaAtiva,
         tipo,
         descricao
     });

@@ -81,18 +81,73 @@ body {
 .app-header {
     background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-primaria-clara) 100%);
     color: white;
-    padding: var(--espacamento-md) var(--espacamento-sm);
-    text-align: center;
+    padding: var(--espacamento-sm);
     box-shadow: var(--sombra-media);
     position: sticky;
     top: 0;
     z-index: 100;
 }
 
-.app-header h1 {
-    font-size: var(--fonte-xl);
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: var(--espacamento-xs);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.select-fazenda {
+    flex: 1;
+    background-color: rgba(255, 255, 255, 0.95);
+    color: var(--cor-primaria);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--raio-borda);
+    padding: var(--espacamento-sm);
+    font-size: var(--fonte-md);
     font-weight: 600;
-    letter-spacing: 0.5px;
+    min-height: 48px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%232d5016' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 3rem;
+}
+
+.select-fazenda:focus {
+    outline: none;
+    border-color: white;
+    background-color: white;
+}
+
+.select-fazenda option {
+    color: var(--cor-texto);
+    background-color: white;
+}
+
+.btn-header {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: var(--espacamento-sm);
+    border-radius: var(--raio-borda);
+    font-size: var(--fonte-lg);
+    cursor: pointer;
+    min-width: 48px;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn-header:active {
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: scale(0.95);
 }
 
 /* ============================================
@@ -644,6 +699,73 @@ button {
     .nav-btn .icon {
         font-size: var(--fonte-sm);
     }
+}
+
+/* ============================================
+   GERENCIAMENTO DE FAZENDAS
+   ============================================ */
+.gerenciar-fazendas {
+    display: flex;
+    flex-direction: column;
+}
+
+.lista-fazendas {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacamento-xs);
+}
+
+.fazenda-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--espacamento-sm);
+    background-color: var(--cor-fundo);
+    border-radius: var(--raio-borda-pequeno);
+    border-left: 3px solid var(--cor-primaria);
+}
+
+.fazenda-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.fazenda-info strong {
+    color: var(--cor-primaria);
+    font-size: var(--fonte-md);
+}
+
+.fazenda-info .hint {
+    font-size: var(--fonte-xs);
+    color: var(--cor-texto-claro);
+}
+
+.fazenda-actions {
+    display: flex;
+    gap: var(--espacamento-xs);
+}
+
+.btn-mini {
+    background: none;
+    border: none;
+    font-size: var(--fonte-lg);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: var(--raio-borda-pequeno);
+    transition: all 0.2s ease;
+    min-width: 40px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn-mini:active {
+    transform: scale(0.9);
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* ============================================

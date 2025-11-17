@@ -1,6 +1,7 @@
 /* Módulo de Controle de Prenhez - Gerencia registros de prenhez do gado */
 
 import { CHAVES_STORAGE, adicionarItem, carregarDados, atualizarItem, removerItem } from './storage.js';
+import { obterFazendaAtiva } from './fazenda.js';
 
 /* Obtém o nome do pasto a partir do id */
 function obterNomePasto(pastoId) {
@@ -14,6 +15,9 @@ function obterNomePasto(pastoId) {
 export function inicializar() {
     renderizarListaPrenhez();
     configurarEventos();
+    
+    /* Recarrega quando a fazenda mudar */
+    window.addEventListener('fazendaAlterada', renderizarListaPrenhez);
 }
 
 /* Configura os eventos dos botões */
@@ -27,7 +31,20 @@ function configurarEventos() {
 /* Renderiza a lista de prenhez na tela */
 export function renderizarListaPrenhez() {
     const container = document.querySelector('.lista-prenhez');
-    const registros = carregarDados(CHAVES_STORAGE.PRENHEZ);
+    const fazendaAtiva = obterFazendaAtiva();
+    
+    if (!fazendaAtiva) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <p>Selecione uma fazenda para visualizar prenhez</p>
+                <p class="hint">Use o seletor no topo da página</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const todosRegistros = carregarDados(CHAVES_STORAGE.PRENHEZ);
+    const registros = todosRegistros.filter(r => r.fazendaId === fazendaAtiva);
     
     if (registros.length === 0) {
         container.innerHTML = `
@@ -313,7 +330,15 @@ function calcularPrevisaoParto() {
 function salvarNovaPrenhez(e) {
     e.preventDefault();
     
+    const fazendaAtiva = obterFazendaAtiva();
+    
+    if (!fazendaAtiva) {
+        alert('Selecione uma fazenda antes de registrar uma prenhez');
+        return;
+    }
+    
     const dadosPrenhez = {
+        fazendaId: fazendaAtiva,
         identificacaoVaca: document.getElementById('id-vaca').value.trim(),
         identificacaoTouro: document.getElementById('id-touro').value.trim(),
         dataCobertura: document.getElementById('data-cobertura').value,
@@ -418,7 +443,10 @@ function formatarData(dataISO) {
 
 /* Registra uma ação no histórico */
 function registrarNoHistorico(tipo, descricao) {
+    const fazendaAtiva = obterFazendaAtiva();
+    
     adicionarItem(CHAVES_STORAGE.HISTORICO, {
+        fazendaId: fazendaAtiva,
         tipo,
         descricao
     });

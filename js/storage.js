@@ -2,6 +2,7 @@
 
 /* Chaves para armazenamento */
 const CHAVES_STORAGE = {
+    FAZENDAS: 'fazenda_fazendas',
     PASTOS: 'fazenda_pastos',
     PRENHEZ: 'fazenda_prenhez',
     DOENCAS: 'fazenda_doencas',
