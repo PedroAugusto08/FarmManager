@@ -2,6 +2,7 @@
 
 import { CHAVES_STORAGE, adicionarItem, carregarDados, atualizarItem, removerItem } from './storage.js';
 import { obterFazendaAtiva } from './fazenda.js';
+import { renderizarListaPastos } from './pasto.js';
 
 /* Obtém o nome do pasto a partir do id */
 function obterNomePasto(pastoId) {
@@ -364,6 +365,7 @@ function salvarNovaDoenca(e) {
     if (adicionarItem(CHAVES_STORAGE.DOENCAS, dadosDoenca)) {
         fecharModal();
         renderizarListaDoencas();
+        renderizarListaPastos();
         registrarNoHistorico('doenca', `Doença registrada - Animal: ${dadosDoenca.identificacaoAnimal} - ${dadosDoenca.nomeDoenca}`);
     } else {
         alert('Erro ao salvar registro. Tente novamente.');
@@ -390,6 +392,7 @@ function atualizarDoenca(e) {
     if (atualizarItem(CHAVES_STORAGE.DOENCAS, id, dadosAtualizados)) {
         fecharModal();
         renderizarListaDoencas();
+        renderizarListaPastos();
         registrarNoHistorico('doenca', `Doença atualizada - Animal: ${dadosAtualizados.identificacaoAnimal} - ${dadosAtualizados.nomeDoenca}`);
     } else {
         alert('Erro ao atualizar registro. Tente novamente.');
@@ -406,6 +409,7 @@ function removerDoenca(id) {
     if (confirm(`Deseja realmente remover o registro de "${registro.nomeDoenca}" do animal "${registro.identificacaoAnimal}"?`)) {
         if (removerItem(CHAVES_STORAGE.DOENCAS, id)) {
             renderizarListaDoencas();
+            renderizarListaPastos();
             registrarNoHistorico('doenca', `Doença removida - Animal: ${registro.identificacaoAnimal} - ${registro.nomeDoenca}`);
         } else {
             alert('Erro ao remover registro. Tente novamente.');

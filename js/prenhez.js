@@ -2,6 +2,7 @@
 
 import { CHAVES_STORAGE, adicionarItem, carregarDados, atualizarItem, removerItem } from './storage.js';
 import { obterFazendaAtiva } from './fazenda.js';
+import { renderizarListaPastos } from './pasto.js';
 
 /* Obtém o nome do pasto a partir do id */
 function obterNomePasto(pastoId) {
@@ -346,6 +347,7 @@ function salvarNovaPrenhez(e) {
     if (adicionarItem(CHAVES_STORAGE.PRENHEZ, dadosPrenhez)) {
         fecharModal();
         renderizarListaPrenhez();
+        renderizarListaPastos();
         registrarNoHistorico('prenhez', `Prenhez registrada - Vaca: ${dadosPrenhez.identificacaoVaca}`);
     } else {
         alert('Erro ao salvar registro. Tente novamente.');
@@ -371,6 +373,7 @@ function atualizarPrenhez(e) {
     if (atualizarItem(CHAVES_STORAGE.PRENHEZ, id, dadosAtualizados)) {
         fecharModal();
         renderizarListaPrenhez();
+        renderizarListaPastos();
         registrarNoHistorico('prenhez', `Prenhez atualizada - Vaca: ${dadosAtualizados.identificacaoVaca}`);
     } else {
         alert('Erro ao atualizar registro. Tente novamente.');
@@ -387,6 +390,7 @@ function removerPrenhez(id) {
     if (confirm(`Deseja realmente remover o registro da vaca "${registro.identificacaoVaca}"?`)) {
         if (removerItem(CHAVES_STORAGE.PRENHEZ, id)) {
             renderizarListaPrenhez();
+            renderizarListaPastos();
             registrarNoHistorico('prenhez', `Prenhez removida - Vaca: ${registro.identificacaoVaca}`);
         } else {
             alert('Erro ao remover registro. Tente novamente.');
