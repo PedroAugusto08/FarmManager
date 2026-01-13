@@ -366,7 +366,22 @@ function salvarNovaDoenca(e) {
         fecharModal();
         renderizarListaDoencas();
         renderizarListaPastos();
-        registrarNoHistorico('doenca', `Doença registrada - Animal: ${dadosDoenca.identificacaoAnimal} - ${dadosDoenca.nomeDoenca}`);
+        registrarNoHistorico(
+            'doenca',
+            `Doença registrada - Animal: ${dadosDoenca.identificacaoAnimal} - ${dadosDoenca.nomeDoenca}`,
+            {
+                acao: 'cadastrar',
+                after: {
+                    identificacaoAnimal: dadosDoenca.identificacaoAnimal,
+                    nomeDoenca: dadosDoenca.nomeDoenca,
+                    dataRegistro: dadosDoenca.dataRegistro,
+                    status: dadosDoenca.status,
+                    tratamento: dadosDoenca.tratamento,
+                    pastoId: dadosDoenca.pastoId,
+                    observacoes: dadosDoenca.observacoes
+                }
+            }
+        );
     } else {
         alert('Erro ao salvar registro. Tente novamente.');
     }
@@ -378,6 +393,9 @@ function atualizarDoenca(e) {
     
     const form = e.target;
     const id = form.dataset.id;
+
+    const registros = carregarDados(CHAVES_STORAGE.DOENCAS);
+    const registroAtual = registros.find(r => r.id === id) || null;
     
     const dadosAtualizados = {
         identificacaoAnimal: document.getElementById('id-animal').value.trim(),
@@ -393,7 +411,32 @@ function atualizarDoenca(e) {
         fecharModal();
         renderizarListaDoencas();
         renderizarListaPastos();
-        registrarNoHistorico('doenca', `Doença atualizada - Animal: ${dadosAtualizados.identificacaoAnimal} - ${dadosAtualizados.nomeDoenca}`);
+        registrarNoHistorico(
+            'doenca',
+            `Doença atualizada - Animal: ${dadosAtualizados.identificacaoAnimal} - ${dadosAtualizados.nomeDoenca}`,
+            {
+                acao: 'atualizar',
+                doencaId: id,
+                before: registroAtual ? {
+                    identificacaoAnimal: registroAtual.identificacaoAnimal,
+                    nomeDoenca: registroAtual.nomeDoenca,
+                    dataRegistro: registroAtual.dataRegistro,
+                    status: registroAtual.status,
+                    tratamento: registroAtual.tratamento,
+                    pastoId: registroAtual.pastoId,
+                    observacoes: registroAtual.observacoes
+                } : null,
+                after: {
+                    identificacaoAnimal: dadosAtualizados.identificacaoAnimal,
+                    nomeDoenca: dadosAtualizados.nomeDoenca,
+                    dataRegistro: dadosAtualizados.dataRegistro,
+                    status: dadosAtualizados.status,
+                    tratamento: dadosAtualizados.tratamento,
+                    pastoId: dadosAtualizados.pastoId,
+                    observacoes: dadosAtualizados.observacoes
+                }
+            }
+        );
     } else {
         alert('Erro ao atualizar registro. Tente novamente.');
     }
@@ -410,7 +453,23 @@ function removerDoenca(id) {
         if (removerItem(CHAVES_STORAGE.DOENCAS, id)) {
             renderizarListaDoencas();
             renderizarListaPastos();
-            registrarNoHistorico('doenca', `Doença removida - Animal: ${registro.identificacaoAnimal} - ${registro.nomeDoenca}`);
+            registrarNoHistorico(
+                'doenca',
+                `Doença removida - Animal: ${registro.identificacaoAnimal} - ${registro.nomeDoenca}`,
+                {
+                    acao: 'remover',
+                    doencaId: id,
+                    before: {
+                        identificacaoAnimal: registro.identificacaoAnimal,
+                        nomeDoenca: registro.nomeDoenca,
+                        dataRegistro: registro.dataRegistro,
+                        status: registro.status,
+                        tratamento: registro.tratamento,
+                        pastoId: registro.pastoId,
+                        observacoes: registro.observacoes
+                    }
+                }
+            );
         } else {
             alert('Erro ao remover registro. Tente novamente.');
         }
@@ -447,12 +506,13 @@ function formatarData(dataISO) {
 }
 
 /* Registra uma ação no histórico */
-function registrarNoHistorico(tipo, descricao) {
+function registrarNoHistorico(tipo, descricao, meta = null) {
     const fazendaAtiva = obterFazendaAtiva();
     
     adicionarItem(CHAVES_STORAGE.HISTORICO, {
         fazendaId: fazendaAtiva,
         tipo,
-        descricao
+        descricao,
+        ...(meta ? { meta } : {})
     });
 }

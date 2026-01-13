@@ -1,6 +1,6 @@
 /* Módulo de Gerenciamento de Pastos - Controla adição, edição, remoção e visualização de pastos */
 
-import { CHAVES_STORAGE, adicionarItem, carregarDados, atualizarItem, removerItem } from './storage.js';
+import { CHAVES_STORAGE, adicionarItem, adicionarItemRetornando, carregarDados, atualizarItem, removerItem } from './storage.js';
 import { obterFazendaAtiva } from './fazenda.js';
 
 /* Inicializa o módulo de pastos */
@@ -314,12 +314,26 @@ function salvarNovoPasto(e) {
     
     const total = dadosPasto.animaisGrandes + dadosPasto.animaisPequenos;
     
-    if (adicionarItem(CHAVES_STORAGE.PASTOS, dadosPasto)) {
+    const novoPasto = adicionarItemRetornando(CHAVES_STORAGE.PASTOS, dadosPasto);
+    if (novoPasto) {
         fecharModal();
         renderizarListaPastos();
         
         /* Adiciona ao histórico */
-        registrarNoHistorico('pasto', `Pasto "${dadosPasto.nome}" cadastrado (${dadosPasto.animaisGrandes} grandes, ${dadosPasto.animaisPequenos} pequenos)`);
+        registrarNoHistorico(
+            'pasto',
+            `Pasto "${dadosPasto.nome}" cadastrado (${dadosPasto.animaisGrandes} grandes, ${dadosPasto.animaisPequenos} pequenos)`,
+            {
+                acao: 'cadastrar',
+                pastoId: novoPasto.id,
+                after: {
+                    nome: dadosPasto.nome,
+                    animaisGrandes: dadosPasto.animaisGrandes,
+                    animaisPequenos: dadosPasto.animaisPequenos,
+                    total
+                }
+            }
+        );
     } else {
         alert('Erro ao salvar pasto. Tente novamente.');
     }
@@ -362,7 +376,26 @@ function atualizarPasto(e) {
         renderizarListaPastos();
         
         /* Adiciona ao histórico */
-        registrarNoHistorico('pasto', `Pasto "${dadosAtualizados.nome}" atualizado (${dadosAtualizados.animaisGrandes} grandes, ${dadosAtualizados.animaisPequenos} pequenos)`);
+        registrarNoHistorico(
+            'pasto',
+            `Pasto "${dadosAtualizados.nome}" atualizado (${dadosAtualizados.animaisGrandes} grandes, ${dadosAtualizados.animaisPequenos} pequenos)`,
+            {
+                acao: 'atualizar',
+                pastoId: id,
+                before: pastoAtual ? {
+                    nome: pastoAtual.nome,
+                    animaisGrandes: pastoAtual.animaisGrandes,
+                    animaisPequenos: pastoAtual.animaisPequenos,
+                    total: (pastoAtual.animaisGrandes || 0) + (pastoAtual.animaisPequenos || 0)
+                } : null,
+                after: {
+                    nome: dadosAtualizados.nome,
+                    animaisGrandes: dadosAtualizados.animaisGrandes,
+                    animaisPequenos: dadosAtualizados.animaisPequenos,
+                    total: (dadosAtualizados.animaisGrandes || 0) + (dadosAtualizados.animaisPequenos || 0)
+                }
+            }
+        );
     } else {
         alert('Erro ao atualizar pasto. Tente novamente.');
     }
@@ -380,7 +413,20 @@ function removerPasto(id) {
             renderizarListaPastos();
             
             /* Adiciona ao histórico */
-            registrarNoHistorico('pasto', `Pasto "${pasto.nome}" removido`);
+            registrarNoHistorico(
+                'pasto',
+                `Pasto "${pasto.nome}" removido`,
+                {
+                    acao: 'remover',
+                    pastoId: id,
+                    before: {
+                        nome: pasto.nome,
+                        animaisGrandes: pasto.animaisGrandes,
+                        animaisPequenos: pasto.animaisPequenos,
+                        total: (pasto.animaisGrandes || 0) + (pasto.animaisPequenos || 0)
+                    }
+                }
+            );
         } else {
             alert('Erro ao remover pasto. Tente novamente.');
         }
@@ -418,12 +464,13 @@ function formatarData(dataISO) {
 }
 
 /* Registra uma ação no histórico */
-function registrarNoHistorico(tipo, descricao) {
+function registrarNoHistorico(tipo, descricao, meta = null) {
     const fazendaAtiva = obterFazendaAtiva();
     
     adicionarItem(CHAVES_STORAGE.HISTORICO, {
         fazendaId: fazendaAtiva,
         tipo,
-        descricao
+        descricao,
+        ...(meta ? { meta } : {})
     });
 }

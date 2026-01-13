@@ -348,7 +348,21 @@ function salvarNovaPrenhez(e) {
         fecharModal();
         renderizarListaPrenhez();
         renderizarListaPastos();
-        registrarNoHistorico('prenhez', `Prenhez registrada - Vaca: ${dadosPrenhez.identificacaoVaca}`);
+        registrarNoHistorico(
+            'prenhez',
+            `Prenhez registrada - Vaca: ${dadosPrenhez.identificacaoVaca}`,
+            {
+                acao: 'cadastrar',
+                after: {
+                    identificacaoVaca: dadosPrenhez.identificacaoVaca,
+                    identificacaoTouro: dadosPrenhez.identificacaoTouro,
+                    dataCobertura: dadosPrenhez.dataCobertura,
+                    dataPrevisaoParto: dadosPrenhez.dataPrevisaoParto,
+                    pastoId: dadosPrenhez.pastoId,
+                    observacoes: dadosPrenhez.observacoes
+                }
+            }
+        );
     } else {
         alert('Erro ao salvar registro. Tente novamente.');
     }
@@ -360,6 +374,9 @@ function atualizarPrenhez(e) {
     
     const form = e.target;
     const id = form.dataset.id;
+
+    const registros = carregarDados(CHAVES_STORAGE.PRENHEZ);
+    const registroAtual = registros.find(r => r.id === id) || null;
     
     const dadosAtualizados = {
         identificacaoVaca: document.getElementById('id-vaca').value.trim(),
@@ -374,7 +391,30 @@ function atualizarPrenhez(e) {
         fecharModal();
         renderizarListaPrenhez();
         renderizarListaPastos();
-        registrarNoHistorico('prenhez', `Prenhez atualizada - Vaca: ${dadosAtualizados.identificacaoVaca}`);
+        registrarNoHistorico(
+            'prenhez',
+            `Prenhez atualizada - Vaca: ${dadosAtualizados.identificacaoVaca}`,
+            {
+                acao: 'atualizar',
+                prenhezId: id,
+                before: registroAtual ? {
+                    identificacaoVaca: registroAtual.identificacaoVaca,
+                    identificacaoTouro: registroAtual.identificacaoTouro,
+                    dataCobertura: registroAtual.dataCobertura,
+                    dataPrevisaoParto: registroAtual.dataPrevisaoParto,
+                    pastoId: registroAtual.pastoId,
+                    observacoes: registroAtual.observacoes
+                } : null,
+                after: {
+                    identificacaoVaca: dadosAtualizados.identificacaoVaca,
+                    identificacaoTouro: dadosAtualizados.identificacaoTouro,
+                    dataCobertura: dadosAtualizados.dataCobertura,
+                    dataPrevisaoParto: dadosAtualizados.dataPrevisaoParto,
+                    pastoId: dadosAtualizados.pastoId,
+                    observacoes: dadosAtualizados.observacoes
+                }
+            }
+        );
     } else {
         alert('Erro ao atualizar registro. Tente novamente.');
     }
@@ -391,7 +431,22 @@ function removerPrenhez(id) {
         if (removerItem(CHAVES_STORAGE.PRENHEZ, id)) {
             renderizarListaPrenhez();
             renderizarListaPastos();
-            registrarNoHistorico('prenhez', `Prenhez removida - Vaca: ${registro.identificacaoVaca}`);
+            registrarNoHistorico(
+                'prenhez',
+                `Prenhez removida - Vaca: ${registro.identificacaoVaca}`,
+                {
+                    acao: 'remover',
+                    prenhezId: id,
+                    before: {
+                        identificacaoVaca: registro.identificacaoVaca,
+                        identificacaoTouro: registro.identificacaoTouro,
+                        dataCobertura: registro.dataCobertura,
+                        dataPrevisaoParto: registro.dataPrevisaoParto,
+                        pastoId: registro.pastoId,
+                        observacoes: registro.observacoes
+                    }
+                }
+            );
         } else {
             alert('Erro ao remover registro. Tente novamente.');
         }
@@ -442,12 +497,13 @@ function formatarData(dataISO) {
 }
 
 /* Registra uma ação no histórico */
-function registrarNoHistorico(tipo, descricao) {
+function registrarNoHistorico(tipo, descricao, meta = null) {
     const fazendaAtiva = obterFazendaAtiva();
     
     adicionarItem(CHAVES_STORAGE.HISTORICO, {
         fazendaId: fazendaAtiva,
         tipo,
-        descricao
+        descricao,
+        ...(meta ? { meta } : {})
     });
 }

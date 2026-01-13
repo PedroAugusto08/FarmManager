@@ -44,6 +44,19 @@ export function adicionarItem(chave, item) {
     return salvarDados(chave, dados);
 }
 
+/* Adiciona um novo item e retorna o objeto criado (inclui id e dataCriacao) */
+export function adicionarItemRetornando(chave, item) {
+    const dados = carregarDados(chave);
+    const novoItem = {
+        ...item,
+        id: gerarId(),
+        dataCriacao: new Date().toISOString()
+    };
+    dados.push(novoItem);
+    const ok = salvarDados(chave, dados);
+    return ok ? novoItem : null;
+}
+
 /* Atualiza um item existente */
 export function atualizarItem(chave, id, dadosAtualizados) {
     const dados = carregarDados(chave);
