@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', inicializarApp);
 /* Função principal de inicialização */
 function inicializarApp() {
     console.log('Iniciando Controle de Gado...');
+
+    /* Registra Service Worker (PWA/offline/install) */
+    registrarServiceWorker();
     
     /* Configura navegação entre seções */
     configurarNavegacao();
@@ -23,6 +26,18 @@ function inicializarApp() {
     inicializarModulos();
     
     console.log('Aplicativo inicializado com sucesso!');
+}
+
+function registrarServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+
+    window.addEventListener('load', async () => {
+        try {
+            await navigator.serviceWorker.register('./sw.js');
+        } catch (err) {
+            console.warn('Service Worker não registrado:', err);
+        }
+    });
 }
 
 /* Inicializa todos os módulos do aplicativo */
