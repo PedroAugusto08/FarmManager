@@ -176,7 +176,10 @@ function mostrarFormularioAdicionar() {
                     id="qtd-grandes" 
                     class="form-input" 
                     placeholder="Ex: 30"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
                     min="0"
+                    step="1"
                     value="0"
                 >
             </div>
@@ -188,7 +191,10 @@ function mostrarFormularioAdicionar() {
                     id="qtd-pequenos" 
                     class="form-input" 
                     placeholder="Ex: 20"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
                     min="0"
+                    step="1"
                     value="0"
                 >
             </div>
@@ -252,7 +258,10 @@ function mostrarFormularioEditar(id) {
                     id="qtd-grandes" 
                     class="form-input" 
                     value="${pasto.animaisGrandes || 0}"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
                     min="0"
+                    step="1"
                 >
             </div>
             
@@ -263,7 +272,10 @@ function mostrarFormularioEditar(id) {
                     id="qtd-pequenos" 
                     class="form-input" 
                     value="${pasto.animaisPequenos || 0}"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
                     min="0"
+                    step="1"
                 >
             </div>
             
@@ -441,6 +453,7 @@ function mostrarModal(titulo, conteudo) {
     
     modalTitulo.textContent = titulo;
     modalBody.innerHTML = conteudo;
+    aplicarTecladoNumerico(modalBody);
     modal.classList.add('active');
     
     /* Fecha modal ao clicar no overlay */
@@ -448,6 +461,17 @@ function mostrarModal(titulo, conteudo) {
         if (e.target === modal) {
             fecharModal();
         }
+    });
+}
+
+function aplicarTecladoNumerico(container) {
+    if (!container) return;
+
+    container.querySelectorAll('input[type="number"]').forEach(input => {
+        /* Em mobile, inputmode ajuda a forçar teclado numérico */
+        input.setAttribute('inputmode', 'numeric');
+        input.setAttribute('pattern', '[0-9]*');
+        if (!input.hasAttribute('step')) input.setAttribute('step', '1');
     });
 }
 

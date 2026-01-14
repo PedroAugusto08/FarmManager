@@ -475,12 +475,23 @@ function mostrarModal(titulo, conteudo) {
     
     modalTitulo.textContent = titulo;
     modalBody.innerHTML = conteudo;
+    aplicarTecladoNumerico(modalBody);
     modal.classList.add('active');
     
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             fecharModal();
         }
+    });
+}
+
+function aplicarTecladoNumerico(container) {
+    if (!container) return;
+
+    container.querySelectorAll('input[type="number"]').forEach(input => {
+        input.setAttribute('inputmode', 'numeric');
+        input.setAttribute('pattern', '[0-9]*');
+        if (!input.hasAttribute('step')) input.setAttribute('step', '1');
     });
 }
 

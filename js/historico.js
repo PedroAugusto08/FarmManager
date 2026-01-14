@@ -433,6 +433,7 @@ function mostrarModal(titulo, conteudo) {
 
     modalTitulo.textContent = titulo;
     modalBody.innerHTML = conteudo;
+    aplicarTecladoNumerico(modalBody);
     modal.classList.add('active');
 
     /* Fecha modal ao clicar no overlay */
@@ -440,6 +441,16 @@ function mostrarModal(titulo, conteudo) {
         if (e.target === modal) {
             modal.classList.remove('active');
         }
+    });
+}
+
+function aplicarTecladoNumerico(container) {
+    if (!container) return;
+
+    container.querySelectorAll('input[type="number"]').forEach(input => {
+        input.setAttribute('inputmode', 'numeric');
+        input.setAttribute('pattern', '[0-9]*');
+        if (!input.hasAttribute('step')) input.setAttribute('step', '1');
     });
 }
 
