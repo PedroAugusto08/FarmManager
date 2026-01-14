@@ -15,6 +15,9 @@ function inicializarApp() {
 
     /* Registra Service Worker (PWA/offline/install) */
     registrarServiceWorker();
+
+    /* Mantém cabeçalho e abas fixos sem sobrepor conteúdo */
+    configurarTopoFixo();
     
     /* Configura navegação entre seções */
     configurarNavegacao();
@@ -26,6 +29,23 @@ function inicializarApp() {
     inicializarModulos();
     
     console.log('Aplicativo inicializado com sucesso!');
+}
+
+function configurarTopoFixo() {
+    const header = document.querySelector('.app-header');
+    const nav = document.querySelector('.main-nav');
+
+    function atualizar() {
+        const headerH = header?.offsetHeight || 0;
+        const navH = nav?.offsetHeight || 0;
+        document.documentElement.style.setProperty('--header-h', `${headerH}px`);
+        document.documentElement.style.setProperty('--nav-h', `${navH}px`);
+        document.documentElement.style.setProperty('--topbars-h', `${headerH + navH}px`);
+    }
+
+    atualizar();
+    window.addEventListener('resize', atualizar);
+    window.addEventListener('orientationchange', atualizar);
 }
 
 function registrarServiceWorker() {
