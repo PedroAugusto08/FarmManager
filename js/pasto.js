@@ -172,14 +172,12 @@ function mostrarFormularioAdicionar() {
             <div class="form-group">
                 <label class="form-label" for="qtd-grandes">Animais Grandes (Vacas)</label>
                 <input 
-                    type="number" 
+                    type="tel" 
                     id="qtd-grandes" 
                     class="form-input" 
                     placeholder="Ex: 30"
                     inputmode="numeric"
                     pattern="[0-9]*"
-                    min="0"
-                    step="1"
                     value="0"
                 >
             </div>
@@ -187,14 +185,12 @@ function mostrarFormularioAdicionar() {
             <div class="form-group">
                 <label class="form-label" for="qtd-pequenos">Animais Pequenos (Bezerros)</label>
                 <input 
-                    type="number" 
+                    type="tel" 
                     id="qtd-pequenos" 
                     class="form-input" 
                     placeholder="Ex: 20"
                     inputmode="numeric"
                     pattern="[0-9]*"
-                    min="0"
-                    step="1"
                     value="0"
                 >
             </div>
@@ -254,28 +250,24 @@ function mostrarFormularioEditar(id) {
             <div class="form-group">
                 <label class="form-label" for="qtd-grandes">Animais Grandes (Vacas)</label>
                 <input 
-                    type="number" 
+                    type="tel" 
                     id="qtd-grandes" 
                     class="form-input" 
                     value="${pasto.animaisGrandes || 0}"
                     inputmode="numeric"
                     pattern="[0-9]*"
-                    min="0"
-                    step="1"
                 >
             </div>
             
             <div class="form-group">
                 <label class="form-label" for="qtd-pequenos">Animais Pequenos (Bezerros)</label>
                 <input 
-                    type="number" 
+                    type="tel" 
                     id="qtd-pequenos" 
                     class="form-input" 
                     value="${pasto.animaisPequenos || 0}"
                     inputmode="numeric"
                     pattern="[0-9]*"
-                    min="0"
-                    step="1"
                 >
             </div>
             
@@ -467,12 +459,22 @@ function mostrarModal(titulo, conteudo) {
 function aplicarTecladoNumerico(container) {
     if (!container) return;
 
-    container.querySelectorAll('input[type="number"]').forEach(input => {
-        /* Em mobile, inputmode ajuda a forçar teclado numérico */
-        input.setAttribute('inputmode', 'numeric');
-        input.setAttribute('pattern', '[0-9]*');
-        if (!input.hasAttribute('step')) input.setAttribute('step', '1');
-    });
+    container
+        .querySelectorAll('input[type="tel"][inputmode="numeric"], input[type="number"]')
+        .forEach(input => {
+            /* Em mobile, inputmode ajuda a forçar teclado numérico */
+            input.setAttribute('inputmode', 'numeric');
+            input.setAttribute('pattern', '[0-9]*');
+
+            /* Garante apenas dígitos (inclusive colar) */
+            if (!input.dataset.apenasDigitos) {
+                input.addEventListener('input', () => {
+                    const limpo = String(input.value || '').replace(/\D+/g, '');
+                    if (input.value !== limpo) input.value = limpo;
+                });
+                input.dataset.apenasDigitos = '1';
+            }
+        });
 }
 
 /* Fecha o modal */

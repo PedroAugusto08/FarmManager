@@ -497,11 +497,20 @@ function mostrarModal(titulo, conteudo) {
 function aplicarTecladoNumerico(container) {
     if (!container) return;
 
-    container.querySelectorAll('input[type="number"]').forEach(input => {
-        input.setAttribute('inputmode', 'numeric');
-        input.setAttribute('pattern', '[0-9]*');
-        if (!input.hasAttribute('step')) input.setAttribute('step', '1');
-    });
+    container
+        .querySelectorAll('input[type="tel"][inputmode="numeric"], input[type="number"]')
+        .forEach(input => {
+            input.setAttribute('inputmode', 'numeric');
+            input.setAttribute('pattern', '[0-9]*');
+
+            if (!input.dataset.apenasDigitos) {
+                input.addEventListener('input', () => {
+                    const limpo = String(input.value || '').replace(/\D+/g, '');
+                    if (input.value !== limpo) input.value = limpo;
+                });
+                input.dataset.apenasDigitos = '1';
+            }
+        });
 }
 
 /* Fecha o modal */
