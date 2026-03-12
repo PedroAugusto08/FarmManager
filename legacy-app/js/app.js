@@ -1,0 +1,241 @@
+/* Arquivo principal que inicializa e coordena todos os módulos */
+
+import * as Fazenda from './fazenda.js';
+import * as Pasto from './pasto.js';
+import * as Prenhez from './prenhez.js';
+import * as Doenca from './doenca.js';
+import * as Historico from './historico.js';
+
+/* Inicializa o aplicativo quando o DOM estiver pronto */
+document.addEventListener('DOMContentLoaded', inicializarApp);
+
+/* Função principal de inicialização */
+function inicializarApp() {
+    console.log('Iniciando Controle de Gado...');
+
+    /* Registra Service Worker (PWA/offline/install) */
+    registrarServiceWorker();
+
+    /* Mantém cabeçalho e abas fixos sem sobrepor conteúdo */
+    configurarTopoFixo();
+    
+    /* Configura navegação entre seções */
+    configurarNavegacao();
+    
+    /* Configura botão de fechar modal */
+    configurarModal();
+    
+    /* Inicializa todos os módulos */
+    inicializarModulos();
+    
+    console.log('Aplicativo inicializado com sucesso!');
+}
+
+function configurarTopoFixo() {
+    const header = document.querySelector('.app-header');
+    const nav = document.querySelector('.main-nav');
+
+    function atualizar() {
+        const headerH = header?.offsetHeight || 0;
+        const navH = nav?.offsetHeight || 0;
+        document.documentElement.style.setProperty('--header-h', `${headerH}px`);
+        document.documentElement.style.setProperty('--nav-h', `${navH}px`);
+        document.documentElement.style.setProperty('--topbars-h', `${headerH + navH}px`);
+    }
+
+    atualizar();
+    window.addEventListener('resize', atualizar);
+    window.addEventListener('orientationchange', atualizar);
+}
+
+function registrarServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+
+    window.addEventListener('load', async () => {
+        try {
+            await navigator.serviceWorker.register('./sw.js');
+        } catch (err) {
+            console.warn('Service Worker não registrado:', err);
+        }
+    });
+}
+
+/* Inicializa todos os módulos do aplicativo */
+function inicializarModulos() {
+    Fazenda.inicializar();
+    Pasto.inicializar();
+    Prenhez.inicializar();
+    Doenca.inicializar();
+    Historico.inicializar();
+}
+
+/* Configura a navegação entre seções */
+function configurarNavegacao() {
+    const botoesNav = document.querySelectorAll('.nav-btn');
+    
+    botoesNav.forEach(botao => {
+        botao.addEventListener('click', (e) => {
+            const secaoId = e.currentTarget.dataset.section;
+            mudarSecao(secaoId);
+        });
+    });
+
+    /* Gesto de swipe lateral para trocar de aba */
+    configurarSwipeSeções();
+}
+
+/* Muda para uma seção específica - @param secaoId: ID da seção a ser exibida */
+let animando = false;
+function mudarSecao(secaoId) {
+    if (animando) return; /* evita disparos múltiplos */
+    const secoes = ['pasto', 'prenhez', 'doenca', 'historico'];
+    const atual = document.querySelector('.section.active');
+    const alvo = document.getElementById(secaoId);
+    if (!alvo || atual === alvo) return;
+
+    const idxAtual = atual ? secoes.indexOf(atual.id) : 0;
+    const idxAlvo = secoes.indexOf(secaoId);
+    const indoParaFrente = idxAlvo > idxAtual;
+
+    /* Botões */
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    const botaoAtivo = document.querySelector(`[data-section="${secaoId}"]`);
+    if (botaoAtivo) botaoAtivo.classList.add('active');
+
+    /* Preparar animações */
+    animando = true;
+    if (atual) {
+        /* Mantém 'active' durante a animação de saída para garantir que animationend dispare */
+        atual.classList.add('animating', indoParaFrente ? 'anim-out-left' : 'anim-out-right');
+    }
+    alvo.classList.add('animating', indoParaFrente ? 'anim-in-right' : 'anim-in-left');
+    alvo.classList.add('active');
+
+    function limpar(secao) {
+        if (!secao) return;
+        secao.classList.remove('anim-out-left','anim-out-right','anim-in-left','anim-in-right','animating');
+    }
+
+    let terminou = 0;
+    function fimAnimacao(e) {
+        /* Garante contagem apenas para as próprias seções */
+        if (e.target !== atual && e.target !== alvo) return;
+        terminou++;
+        if (terminou >= (atual ? 2 : 1)) {
+            /* Remove active da seção antiga somente após animação concluir */
+            atual?.classList.remove('active');
+            limpar(atual);
+            limpar(alvo);
+            animando = false;
+            if (secaoId === 'historico') {
+                Historico.renderizarHistorico();
+            }
+            atual?.removeEventListener('animationend', fimAnimacao);
+            alvo.removeEventListener('animationend', fimAnimacao);
+        }
+    }
+    atual?.addEventListener('animationend', fimAnimacao);
+    alvo.addEventListener('animationend', fimAnimacao);
+}
+
+/* Configura eventos do modal */
+function configurarModal() {
+    const btnFechar = document.getElementById('modal-close');
+    const modalOverlay = document.getElementById('modal-overlay');
+    
+    if (btnFechar) {
+        btnFechar.addEventListener('click', () => {
+            modalOverlay.classList.remove('active');
+        });
+    }
+    
+    /* Fecha modal ao pressionar ESC */
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
+            modalOverlay.classList.remove('active');
+        }
+    });
+}
+
+/* Exporta função de mudança de seção para uso em outros módulos */
+export { mudarSecao };
+
+/* =============================
+   Swipe lateral entre seções
+   ============================= */
+function configurarSwipeSeções() {
+    const secoes = ['pasto', 'prenhez', 'doenca', 'historico'];
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+    const threshold = 50; /* px mínimos em X */
+    const restraintY = 40; /* tolerância vertical */
+    let bloqueado = false;
+    let pertoDaBorda = false;
+    const edgeWidth = 24; /* ignora gesto muito nas bordas para não acionar navegação do sistema */
+
+    /* Evita swipe quando o modal estiver aberto */
+    const modalOverlay = document.getElementById('modal-overlay');
+
+    function indiceAtual() {
+        const ativo = document.querySelector('.section.active');
+        const id = ativo ? ativo.id : 'pasto';
+        return Math.max(0, secoes.indexOf(id));
+    }
+
+    function onTouchStart(e) {
+        if (modalOverlay && modalOverlay.classList.contains('active')) return;
+        const t = e.changedTouches ? e.changedTouches[0] : e.touches[0];
+        touchStartX = t.clientX;
+        touchStartY = t.clientY;
+        bloqueado = false;
+        pertoDaBorda = (touchStartX <= edgeWidth) || ((window.innerWidth - touchStartX) <= edgeWidth);
+    }
+
+    function onTouchMove(e) {
+        /* Se houver rolagem vertical dominante, não tratar como swipe horizontal */
+        if (bloqueado) return;
+        const t = e.changedTouches ? e.changedTouches[0] : e.touches[0];
+        const dx = Math.abs(t.clientX - touchStartX);
+        const dy = Math.abs(t.clientY - touchStartY);
+        if (dy > restraintY && dy > dx) {
+            bloqueado = true;
+            return;
+        }
+        /* Quando horizontal começa a predominar, previne scroll lateral da página */
+        if (dx > 5 && dx > dy && dy <= restraintY) {
+            /* somente se não for gesto na borda */
+            if (!pertoDaBorda) {
+                if (e.cancelable) e.preventDefault();
+            }
+        }
+    }
+
+    function onTouchEnd(e) {
+        if (modalOverlay && modalOverlay.classList.contains('active')) return;
+        if (bloqueado || pertoDaBorda) return;
+        const t = e.changedTouches ? e.changedTouches[0] : e;
+        touchEndX = t.clientX;
+        touchEndY = t.clientY;
+        const dx = touchEndX - touchStartX;
+        const dy = Math.abs(touchEndY - touchStartY);
+        if (Math.abs(dx) > threshold && dy <= restraintY) {
+            const idx = indiceAtual();
+            if (dx < 0 && idx < secoes.length - 1) {
+                /* swipe esquerda -> próxima aba */
+                mudarSecao(secoes[idx + 1]);
+            } else if (dx > 0 && idx > 0) {
+                /* swipe direita -> aba anterior */
+                mudarSecao(secoes[idx - 1]);
+            }
+        }
+    }
+
+    /* Ouvir eventos no conteúdo principal para capturar gesto em listas longas */
+    const area = document.querySelector('.app-content') || document.body;
+    area.addEventListener('touchstart', onTouchStart, { passive: true });
+    /* precisa ser passive:false para poder chamar preventDefault e impedir pan-x */
+    area.addEventListener('touchmove', onTouchMove, { passive: false });
+    area.addEventListener('touchend', onTouchEnd, { passive: true });
+}

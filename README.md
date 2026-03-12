@@ -102,6 +102,36 @@ FarmManager/
 - [ ] Notificações para partos próximos
 - [ ] Gráficos e estatísticas
 
+## Estrategia de Corte para React
+
+Para migrar a entrada principal do app para a versao React com rollback rapido, use os scripts em `scripts/`.
+
+### 1. Promover React para a raiz
+
+```bash
+./scripts/cutover_to_react.sh
+```
+
+O script executa:
+- backup do legado em `legacy-app/` (somente na primeira execucao);
+- build da aplicacao React em `react-ts/`;
+- copia de `react-ts/dist/` para a raiz do projeto;
+- criacao de `.cutover-state` com o modo ativo.
+
+### 2. Rollback imediato para legado
+
+```bash
+./scripts/rollback_to_legacy.sh
+```
+
+O script restaura `index.html`, `css/`, `js/`, `icons/`, `manifest.webmanifest` e `sw.js` a partir de `legacy-app/`.
+
+### 3. Recomendacao operacional
+
+- Execute o corte primeiro em homologacao.
+- Valide instalacao PWA e funcionamento offline.
+- Se houver regressao, rode rollback e mantenha operacao no legado.
+
 ## 📄 Licença
 
 Projeto desenvolvido para uso pessoal.
