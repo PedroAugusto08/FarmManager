@@ -76,6 +76,26 @@ export function criarFazenda(nome: string): Fazenda | null {
   return nova;
 }
 
+export function atualizarFazenda(fazendaId: string, nome: string): Fazenda | null {
+  const valor = nome.trim();
+  if (!fazendaId || !valor) return null;
+
+  const fazendas = lerLista<Fazenda>(STORAGE_KEYS.fazendas);
+  const indice = fazendas.findIndex((item) => mesmoId(item.id, fazendaId));
+  if (indice < 0) return null;
+
+  const atualizada: Fazenda = {
+    ...fazendas[indice],
+    nome: valor,
+    dataAtualizacao: new Date().toISOString()
+  };
+
+  const copia = [...fazendas];
+  copia[indice] = atualizada;
+  salvarLista(STORAGE_KEYS.fazendas, copia);
+  return atualizada;
+}
+
 export interface PastoPayload {
   nome: string;
   animaisGrandes: number;

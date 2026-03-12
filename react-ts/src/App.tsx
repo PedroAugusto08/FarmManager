@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  atualizarFazenda,
   atualizarDoenca,
   atualizarPasto,
   atualizarPrenhez,
@@ -81,6 +82,20 @@ const FILTROS_HISTORICO: Array<{ id: FiltroHistorico; label: string }> = [
   { id: 'prenhez', label: 'Prenhez' },
   { id: 'doenca', label: 'Doenca' }
 ];
+
+const CONTEXTO_ABA: Record<Aba, string> = {
+  pasto: 'Controle de lotacao, capacidade e observacoes de cada pasto.',
+  prenhez: 'Acompanhe cobertura, previsao de parto e registros por vaca.',
+  doenca: 'Monitore casos, status de tratamento e ocorrencias sanitarias.',
+  historico: 'Linha do tempo das mudancas com comparativo antes e agora.'
+};
+
+const SIMBOLO_ABA: Record<Aba, string> = {
+  pasto: '🌿',
+  prenhez: '🐄',
+  doenca: '✚',
+  historico: '◷'
+};
 
 function criarFormularioPastoInicial(): PastoFormState {
   return {
@@ -570,7 +585,10 @@ function ordenarPorDataDesc<T extends { dataCriacao: string }>(lista: T[]): T[] 
 function App() {
   const [snapshot, setSnapshot] = useState(() => carregarSnapshot());
   const [abaAtiva, setAbaAtiva] = useState<Aba>('pasto');
-  const [nomeNovaFazenda, setNomeNovaFazenda] = useState('');
+  const [painelFazendasAberto, setPainelFazendasAberto] = useState(false);
+  const [nomeFazendaNovaPainel, setNomeFazendaNovaPainel] = useState('');
+  const [nomeFazendaEdicaoPainel, setNomeFazendaEdicaoPainel] = useState('');
+  const [erroPainelFazenda, setErroPainelFazenda] = useState<string | null>(null);
   const [pastoForm, setPastoForm] = useState<PastoFormState | null>(null);
   const [erroPasto, setErroPasto] = useState<string | null>(null);
   const [prenhezForm, setPrenhezForm] = useState<PrenhezFormState | null>(null);
@@ -599,6 +617,21 @@ function App() {
     [snapshot.fazendas, fazendaAtivaId]
   );
 
+  useEffect(() => {
+    setNomeFazendaEdicaoPainel(fazendaAtiva?.nome ?? '');
+  }, [fazendaAtiva]);
+
+  useEffect(() => {
+    if (!painelFazendasAberto) return;
+
+    const overflowAnterior = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = overflowAnterior;
+    };
+  }, [painelFazendasAberto]);
+
   const pastosFiltrados = useMemo(
     () => snapshot.pastos.filter((pasto) => pasto.fazendaId === fazendaAtivaId),
     [snapshot.pastos, fazendaAtivaId]
@@ -621,15 +654,6 @@ function App() {
 
   const mapaPastos = useMemo(
     () => new Map(pastosFiltrados.map((pasto) => [String(pasto.id), pasto.nome])),
-    [pastosFiltrados]
-  );
-
-  const qtdTotalAnimais = useMemo(
-    () =>
-      pastosFiltrados.reduce(
-        (acumulador, pasto) => acumulador + (pasto.animaisGrandes || 0) + (pasto.animaisPequenos || 0),
-        0
-      ),
     [pastosFiltrados]
   );
 
@@ -718,6 +742,7 @@ function App() {
   function onSelecionarFazenda(evento: React.ChangeEvent<HTMLSelectElement>) {
     const proximoId = evento.target.value || null;
     definirFazendaAtiva(proximoId);
+    setErroPainelFazenda(null);
     setPastoForm(null);
     setErroPasto(null);
     setPrenhezForm(null);
@@ -729,13 +754,26 @@ function App() {
     recarregar();
   }
 
-  function onCriarFazenda(evento: React.FormEvent<HTMLFormElement>) {
+  function abrirPainelFazendas() {
+    setErroPainelFazenda(null);
+    setNomeFazendaEdicaoPainel(fazendaAtiva?.nome ?? '');
+    setPainelFazendasAberto(true);
+  }
+
+  function fecharPainelFazendas() {
+    setErroPainelFazenda(null);
+    setPainelFazendasAberto(false);
+  }
+
+  function onCriarFazendaPainel(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
-    const nova = criarFazenda(nomeNovaFazenda);
+    const nova = criarFazenda(nomeFazendaNovaPainel);
     if (!nova) return;
 
     definirFazendaAtiva(nova.id);
-    setNomeNovaFazenda('');
+    setNomeFazendaNovaPainel('');
+    setNomeFazendaEdicaoPainel(nova.nome);
+    setErroPainelFazenda(null);
     setPastoForm(null);
     setErroPasto(null);
     setPrenhezForm(null);
@@ -744,6 +782,24 @@ function App() {
     setErroDoenca(null);
     setFiltroHistorico('todos');
     setHistoricoSelecionadoId(null);
+    recarregar();
+  }
+
+  function onRenomearFazendaAtiva(evento: React.FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    if (!fazendaAtivaId) {
+      setErroPainelFazenda('Selecione uma fazenda para editar.');
+      return;
+    }
+
+    const atualizada = atualizarFazenda(fazendaAtivaId, nomeFazendaEdicaoPainel);
+    if (!atualizada) {
+      setErroPainelFazenda('Nao foi possivel atualizar o nome da fazenda.');
+      return;
+    }
+
+    setNomeFazendaEdicaoPainel(atualizada.nome);
+    setErroPainelFazenda(null);
     recarregar();
   }
 
@@ -756,6 +812,10 @@ function App() {
 
     if (!confirmar) return;
     removerFazenda(fazendaAtiva.id);
+    setNomeFazendaNovaPainel('');
+    setNomeFazendaEdicaoPainel('');
+    setErroPainelFazenda(null);
+    setPainelFazendasAberto(false);
     setPastoForm(null);
     setErroPasto(null);
     setPrenhezForm(null);
@@ -1309,16 +1369,9 @@ function App() {
   return (
     <div className="app-shell">
       <header className="hero-header">
-        <p className="kicker">Farm Manager · Migracao React + TypeScript</p>
-        <h1>Painel de transicao</h1>
-        <p className="lead">
-          Etapa 6 concluida: PWA integrada com manifesto e service worker, mantendo compatibilidade
-          com os dados legados no localStorage.
-        </p>
-
-        <form className="farm-form" onSubmit={onCriarFazenda}>
-          <label className="field">
-            Fazenda ativa
+        <div className="farm-bar">
+          <label className="field compact-field farm-active-field">
+            <span>Fazenda ativa</span>
             <select value={fazendaAtivaId} onChange={onSelecionarFazenda}>
               <option value="">Selecione...</option>
               {snapshot.fazendas.map((fazenda) => (
@@ -1329,49 +1382,80 @@ function App() {
             </select>
           </label>
 
-          <label className="field">
-            Nova fazenda
-            <input
-              type="text"
-              value={nomeNovaFazenda}
-              onChange={(evento) => setNomeNovaFazenda(evento.target.value)}
-              placeholder="Ex: Fazenda Santa Luzia"
-              maxLength={80}
-            />
-          </label>
-
-          <button className="btn primary" type="submit">
-            Adicionar
+          <button className="btn ghost farm-manage-btn" type="button" onClick={abrirPainelFazendas}>
+            <span className="farm-action-icon" aria-hidden="true">⚙</span>
+            <span className="farm-action-text">Gerenciar</span>
           </button>
-
-          <button className="btn ghost" type="button" disabled={!fazendaAtiva} onClick={onRemoverFazendaAtual}>
-            Remover ativa
-          </button>
-        </form>
+        </div>
       </header>
 
-      <section className="summary-grid" aria-label="Resumo da fazenda">
-        <article className="summary-card">
-          <p className="summary-label">Pastos</p>
-          <strong>{pastosFiltrados.length}</strong>
-        </article>
-        <article className="summary-card">
-          <p className="summary-label">Animais</p>
-          <strong>{qtdTotalAnimais}</strong>
-        </article>
-        <article className="summary-card">
-          <p className="summary-label">Prenhez</p>
-          <strong>{prenhezFiltradas.length}</strong>
-        </article>
-        <article className="summary-card">
-          <p className="summary-label">Doencas</p>
-          <strong>{doencasFiltradas.length}</strong>
-        </article>
-        <article className="summary-card">
-          <p className="summary-label">Historico</p>
-          <strong>{historicoFiltrado.length}</strong>
-        </article>
-      </section>
+      {painelFazendasAberto && (
+        <div
+          className="farm-sheet-overlay"
+          role="presentation"
+          tabIndex={-1}
+          onClick={(evento) => {
+            if (evento.target === evento.currentTarget) {
+              fecharPainelFazendas();
+            }
+          }}
+          onKeyDown={(evento) => {
+            if (evento.key === 'Escape') {
+              fecharPainelFazendas();
+            }
+          }}
+        >
+          <section className="farm-sheet" role="dialog" aria-modal="true" aria-labelledby="farm-modal-title">
+            <div className="farm-sheet-handle" aria-hidden="true" />
+
+            <div className="farm-sheet-header">
+              <h3 id="farm-modal-title">Gerenciar fazendas</h3>
+              <button className="btn tiny" type="button" onClick={fecharPainelFazendas}>
+                Fechar
+              </button>
+            </div>
+
+            <form className="farm-manage-form" onSubmit={onRenomearFazendaAtiva}>
+              <label className="field compact-field">
+                <span>Editar nome da fazenda ativa</span>
+                <input
+                  type="text"
+                  value={nomeFazendaEdicaoPainel}
+                  onChange={(evento) => setNomeFazendaEdicaoPainel(evento.target.value)}
+                  placeholder="Nome da fazenda"
+                  maxLength={80}
+                  disabled={!fazendaAtiva}
+                />
+              </label>
+              <button className="btn primary" type="submit" disabled={!fazendaAtiva}>
+                Salvar nome
+              </button>
+            </form>
+
+            <form className="farm-manage-form" onSubmit={onCriarFazendaPainel}>
+              <label className="field compact-field">
+                <span>Criar nova fazenda</span>
+                <input
+                  type="text"
+                  value={nomeFazendaNovaPainel}
+                  onChange={(evento) => setNomeFazendaNovaPainel(evento.target.value)}
+                  placeholder="Ex: Santa Luzia"
+                  maxLength={80}
+                />
+              </label>
+              <button className="btn primary" type="submit">
+                Criar e selecionar
+              </button>
+            </form>
+
+            <button className="btn danger" type="button" disabled={!fazendaAtiva} onClick={onRemoverFazendaAtual}>
+              Remover fazenda ativa
+            </button>
+
+            {erroPainelFazenda && <p className="inline-error">{erroPainelFazenda}</p>}
+          </section>
+        </div>
+      )}
 
       <nav className="tabs" aria-label="Navegacao de modulos">
         {ABAS.map((aba) => (
@@ -1381,10 +1465,13 @@ function App() {
             type="button"
             onClick={() => setAbaAtiva(aba.id)}
           >
-            {aba.label}
+            <span className="tab-icon" aria-hidden="true">{SIMBOLO_ABA[aba.id]}</span>
+            <span className="tab-label">{aba.label}</span>
           </button>
         ))}
       </nav>
+
+      {exibirConteudo && <p className="context-hint">{CONTEXTO_ABA[abaAtiva]}</p>}
 
       {!exibirConteudo && (
         <section className="empty-panel">
@@ -1394,7 +1481,12 @@ function App() {
       )}
 
       {exibirConteudo && abaAtiva === 'pasto' && (
-        <section className="panel-list" aria-label="Lista de pastos">
+        <section className="panel-list module-panel" aria-label="Lista de pastos">
+          <div className="section-heading">
+            <h2>Pastos da fazenda</h2>
+            <p>Cadastre e ajuste lotacao por area com poucos toques.</p>
+          </div>
+
           <div className="pasto-toolbar">
             <button className="btn primary" type="button" onClick={abrirFormularioNovoPasto}>
               + Adicionar pasto
@@ -1508,7 +1600,12 @@ function App() {
       )}
 
       {exibirConteudo && abaAtiva === 'prenhez' && (
-        <section className="panel-list" aria-label="Lista de prenhez">
+        <section className="panel-list module-panel" aria-label="Lista de prenhez">
+          <div className="section-heading">
+            <h2>Controle de prenhez</h2>
+            <p>Priorize os partos proximos e mantenha previsoes atualizadas.</p>
+          </div>
+
           <div className="pasto-toolbar">
             <button className="btn primary" type="button" onClick={abrirFormularioNovaPrenhez}>
               + Registrar prenhez
@@ -1648,7 +1745,12 @@ function App() {
       )}
 
       {exibirConteudo && abaAtiva === 'doenca' && (
-        <section className="panel-list" aria-label="Lista de doencas">
+        <section className="panel-list module-panel" aria-label="Lista de doencas">
+          <div className="section-heading">
+            <h2>Saude do rebanho</h2>
+            <p>Visualize rapidamente status, tratamento e evolucao dos casos.</p>
+          </div>
+
           <div className="pasto-toolbar">
             <button className="btn primary" type="button" onClick={abrirFormularioNovaDoenca}>
               + Registrar doenca
@@ -1799,7 +1901,12 @@ function App() {
       )}
 
       {exibirConteudo && abaAtiva === 'historico' && (
-        <section className="panel-list" aria-label="Lista de historico">
+        <section className="panel-list module-panel" aria-label="Lista de historico">
+          <div className="section-heading">
+            <h2>Historico geral</h2>
+            <p>Consulte o que mudou e abra detalhes completos de cada acao.</p>
+          </div>
+
           <div className="history-toolbar">
             <label className="field history-filter">
               Filtrar por tipo

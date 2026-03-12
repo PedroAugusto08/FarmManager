@@ -2,7 +2,7 @@
 
 Aplicacao React + TypeScript criada para migracao incremental do sistema legado em JavaScript puro.
 
-## Etapa 6 concluida
+## Etapa 7 concluida
 
 - Base React + TypeScript com Vite criada em pasta separada.
 - Tipagem de dominio para fazendas, pastos, prenhez, doencas e historico.
@@ -30,6 +30,10 @@ Aplicacao React + TypeScript criada para migracao incremental do sistema legado 
   - `manifest.webmanifest` dedicado na pasta `public`;
   - `sw.js` para cache offline basico de navegacao e assets;
   - registro do service worker no bootstrap da aplicacao.
+- UI reorganizada para mobile (foco iOS):
+  - hierarquia visual mais clara entre resumo, navegacao e modulos;
+  - navegacao por abas com contadores e melhor alcance no celular;
+  - formularios e cartoes com toque confortavel, leitura rapida e transicoes suaves.
 - Painel com selecao de fazenda ativa, resumo e abas por modulo.
 
 ## Como rodar
@@ -47,5 +51,5 @@ npm run dev
 
 ## Proximas etapas sugeridas
 
-1. Definir estrategia de corte final do app legado.
-2. Opcional: evoluir para precache automatico de assets com plugin PWA no Vite.
+1. Opcional: evoluir para precache automatico de assets com plugin PWA no Vite.
+2. Opcional: adicionar modo de alto contraste para uso em sol forte no campo.
