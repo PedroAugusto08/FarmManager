@@ -24,6 +24,14 @@ type ModoPrenhez = 'novo' | 'editar';
 type ModoDoenca = 'novo' | 'editar';
 type FiltroHistorico = 'todos' | 'pasto' | 'prenhez' | 'doenca';
 type ValorDetalhe = string | number;
+type TipoToast = 'success' | 'error' | 'info';
+
+interface ToastItem {
+  id: string;
+  tipo: TipoToast;
+  titulo: string;
+  descricao?: string;
+}
 
 interface DetalhesHistorico {
   antes?: Record<string, ValorDetalhe> | null;
@@ -83,19 +91,14 @@ const FILTROS_HISTORICO: Array<{ id: FiltroHistorico; label: string }> = [
   { id: 'doenca', label: 'Doenca' }
 ];
 
-const CONTEXTO_ABA: Record<Aba, string> = {
-  pasto: 'Controle de lotacao, capacidade e observacoes de cada pasto.',
-  prenhez: 'Acompanhe cobertura, previsao de parto e registros por vaca.',
-  doenca: 'Monitore casos, status de tratamento e ocorrencias sanitarias.',
-  historico: 'Linha do tempo das mudancas com comparativo antes e agora.'
-};
-
 const SIMBOLO_ABA: Record<Aba, string> = {
   pasto: '🌿',
   prenhez: '🐄',
   doenca: '✚',
   historico: '◷'
 };
+
+const CHAVE_UI_CONTRASTE = 'farmmanager_ui_contrast';
 
 function criarFormularioPastoInicial(): PastoFormState {
   return {
@@ -582,6 +585,11 @@ function ordenarPorDataDesc<T extends { dataCriacao: string }>(lista: T[]): T[] 
   );
 }
 
+function criarEstiloEntrada(indice: number, atrasoBase = 0): React.CSSProperties {
+  const atraso = Math.min(indice, 10) * 40 + atrasoBase;
+  return { '--enter-delay': `${atraso}ms` } as React.CSSProperties;
+}
+
 function App() {
   const [snapshot, setSnapshot] = useState(() => carregarSnapshot());
   const [abaAtiva, setAbaAtiva] = useState<Aba>('pasto');
@@ -597,6 +605,28 @@ function App() {
   const [erroDoenca, setErroDoenca] = useState<string | null>(null);
   const [filtroHistorico, setFiltroHistorico] = useState<FiltroHistorico>('todos');
   const [historicoSelecionadoId, setHistoricoSelecionadoId] = useState<string | null>(null);
+  const [altoContrasteAtivo, setAltoContrasteAtivo] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return window.localStorage.getItem(CHAVE_UI_CONTRASTE) === 'high';
+    } catch {
+      return false;
+    }
+  });
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  const removerToast = useCallback((id: string) => {
+    setToasts((atual) => atual.filter((toast) => toast.id !== id));
+  }, []);
+
+  const mostrarToast = useCallback(
+    (tipo: TipoToast, titulo: string, descricao?: string) => {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      setToasts((atual) => [...atual, { id, tipo, titulo, descricao }].slice(-4));
+      window.setTimeout(() => removerToast(id), 3600);
+    },
+    [removerToast]
+  );
 
   const recarregar = useCallback(() => {
     setSnapshot(carregarSnapshot());
@@ -610,6 +640,27 @@ function App() {
     return () => window.removeEventListener('storage', onStorage);
   }, [recarregar]);
 
+  useEffect(() => {
+    const raiz = document.documentElement;
+
+    if (altoContrasteAtivo) {
+      raiz.setAttribute('data-contrast', 'high');
+      try {
+        window.localStorage.setItem(CHAVE_UI_CONTRASTE, 'high');
+      } catch {
+        // Ignora falhas de persistencia para nao quebrar o fluxo da UI.
+      }
+      return;
+    }
+
+    raiz.removeAttribute('data-contrast');
+    try {
+      window.localStorage.setItem(CHAVE_UI_CONTRASTE, 'normal');
+    } catch {
+      // Ignora falhas de persistencia para nao quebrar o fluxo da UI.
+    }
+  }, [altoContrasteAtivo]);
+
   const fazendaAtivaId = snapshot.fazendaAtiva ?? '';
 
   const fazendaAtiva = useMemo(
@@ -617,12 +668,19 @@ function App() {
     [snapshot.fazendas, fazendaAtivaId]
   );
 
+  const algumOverlayAberto =
+    painelFazendasAberto ||
+    Boolean(pastoForm) ||
+    Boolean(prenhezForm) ||
+    Boolean(doencaForm) ||
+    Boolean(historicoSelecionadoId);
+
   useEffect(() => {
     setNomeFazendaEdicaoPainel(fazendaAtiva?.nome ?? '');
   }, [fazendaAtiva]);
 
   useEffect(() => {
-    if (!painelFazendasAberto) return;
+    if (!algumOverlayAberto) return;
 
     const overflowAnterior = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -630,7 +688,7 @@ function App() {
     return () => {
       document.body.style.overflow = overflowAnterior;
     };
-  }, [painelFazendasAberto]);
+  }, [algumOverlayAberto]);
 
   const pastosFiltrados = useMemo(
     () => snapshot.pastos.filter((pasto) => pasto.fazendaId === fazendaAtivaId),
@@ -760,6 +818,16 @@ function App() {
     setPainelFazendasAberto(true);
   }
 
+  function alternarAltoContraste() {
+    const proximo = !altoContrasteAtivo;
+    setAltoContrasteAtivo(proximo);
+    mostrarToast(
+      'info',
+      proximo ? 'Alto contraste ativado' : 'Alto contraste desativado',
+      proximo ? 'Leitura otimizada para uso sob sol forte.' : 'Visual padrao restaurado.'
+    );
+  }
+
   function fecharPainelFazendas() {
     setErroPainelFazenda(null);
     setPainelFazendasAberto(false);
@@ -768,7 +836,11 @@ function App() {
   function onCriarFazendaPainel(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     const nova = criarFazenda(nomeFazendaNovaPainel);
-    if (!nova) return;
+    if (!nova) {
+      setErroPainelFazenda('Nao foi possivel criar a fazenda. Verifique o armazenamento do navegador.');
+      mostrarToast('error', 'Falha ao criar fazenda', 'Nao foi possivel salvar no navegador.');
+      return;
+    }
 
     definirFazendaAtiva(nova.id);
     setNomeFazendaNovaPainel('');
@@ -783,24 +855,28 @@ function App() {
     setFiltroHistorico('todos');
     setHistoricoSelecionadoId(null);
     recarregar();
+    mostrarToast('success', 'Fazenda criada', `Agora ativa: ${nova.nome}`);
   }
 
   function onRenomearFazendaAtiva(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     if (!fazendaAtivaId) {
       setErroPainelFazenda('Selecione uma fazenda para editar.');
+      mostrarToast('error', 'Sem fazenda ativa', 'Selecione uma fazenda para editar o nome.');
       return;
     }
 
     const atualizada = atualizarFazenda(fazendaAtivaId, nomeFazendaEdicaoPainel);
     if (!atualizada) {
       setErroPainelFazenda('Nao foi possivel atualizar o nome da fazenda.');
+      mostrarToast('error', 'Falha ao atualizar', 'Nao foi possivel atualizar o nome da fazenda.');
       return;
     }
 
     setNomeFazendaEdicaoPainel(atualizada.nome);
     setErroPainelFazenda(null);
     recarregar();
+    mostrarToast('success', 'Fazenda atualizada', `Novo nome: ${atualizada.nome}`);
   }
 
   function onRemoverFazendaAtual() {
@@ -825,6 +901,7 @@ function App() {
     setFiltroHistorico('todos');
     setHistoricoSelecionadoId(null);
     recarregar();
+    mostrarToast('success', 'Fazenda removida', `${fazendaAtiva.nome} foi removida da selecao.`);
   }
 
   function abrirFormularioNovoPasto() {
@@ -863,6 +940,7 @@ function App() {
 
     if (!fazendaAtivaId) {
       setErroPasto('Selecione uma fazenda antes de salvar um pasto.');
+      mostrarToast('error', 'Sem fazenda ativa', 'Selecione uma fazenda antes de salvar um pasto.');
       return;
     }
 
@@ -875,6 +953,7 @@ function App() {
 
     if (!payload.nome.trim()) {
       setErroPasto('Informe o nome do pasto.');
+      mostrarToast('error', 'Nome obrigatorio', 'Informe o nome do pasto para continuar.');
       return;
     }
 
@@ -882,6 +961,7 @@ function App() {
       const novo = criarPasto(fazendaAtivaId, payload);
       if (!novo) {
         setErroPasto('Nao foi possivel salvar o pasto.');
+        mostrarToast('error', 'Falha ao salvar', 'Nao foi possivel salvar o pasto.');
         return;
       }
 
@@ -903,17 +983,20 @@ function App() {
 
       recarregar();
       fecharFormularioPasto();
+      mostrarToast('success', 'Pasto cadastrado', `${novo.nome} foi adicionado com sucesso.`);
       return;
     }
 
     if (!pastoForm.id) {
       setErroPasto('Pasto invalido para edicao.');
+      mostrarToast('error', 'Pasto invalido', 'Nao foi possivel identificar o pasto para edicao.');
       return;
     }
 
     const pastoAtual = snapshot.pastos.find((item) => mesmoId(item.id, pastoForm.id));
     if (!pastoAtual) {
       setErroPasto('Pasto nao encontrado.');
+      mostrarToast('error', 'Pasto nao encontrado', 'Atualize a tela e tente novamente.');
       return;
     }
 
@@ -929,6 +1012,7 @@ function App() {
 
     if (!atualizado) {
       setErroPasto('Nao foi possivel atualizar o pasto.');
+      mostrarToast('error', 'Falha ao atualizar', 'Nao foi possivel atualizar o pasto.');
       return;
     }
 
@@ -956,6 +1040,7 @@ function App() {
 
     recarregar();
     fecharFormularioPasto();
+    mostrarToast('success', 'Pasto atualizado', `${atualizado.nome} foi atualizado.`);
   }
 
   function onRemoverPasto(pastoId: string) {
@@ -966,7 +1051,10 @@ function App() {
     if (!confirmar) return;
 
     const removido = removerPasto(pastoId);
-    if (!removido) return;
+    if (!removido) {
+      mostrarToast('error', 'Falha ao remover', 'Nao foi possivel remover o pasto.');
+      return;
+    }
 
     if (fazendaAtivaId) {
       registrarHistorico(fazendaAtivaId, 'pasto', `Pasto "${removido.nome}" removido`, {
@@ -986,6 +1074,7 @@ function App() {
     }
 
     recarregar();
+    mostrarToast('success', 'Pasto removido', `${removido.nome} foi removido.`);
   }
 
   function abrirFormularioNovaPrenhez() {
@@ -1045,6 +1134,7 @@ function App() {
 
     if (!fazendaAtivaId) {
       setErroPrenhez('Selecione uma fazenda antes de salvar uma prenhez.');
+      mostrarToast('error', 'Sem fazenda ativa', 'Selecione uma fazenda antes de salvar uma prenhez.');
       return;
     }
 
@@ -1059,6 +1149,7 @@ function App() {
 
     if (!payload.identificacaoVaca.trim()) {
       setErroPrenhez('Informe a identificacao da vaca.');
+      mostrarToast('error', 'Vaca obrigatoria', 'Informe a identificacao da vaca.');
       return;
     }
 
@@ -1066,6 +1157,7 @@ function App() {
       const novo = criarPrenhez(fazendaAtivaId, payload);
       if (!novo) {
         setErroPrenhez('Nao foi possivel salvar o registro de prenhez.');
+        mostrarToast('error', 'Falha ao salvar', 'Nao foi possivel salvar o registro de prenhez.');
         return;
       }
 
@@ -1083,23 +1175,27 @@ function App() {
 
       recarregar();
       fecharFormularioPrenhez();
+      mostrarToast('success', 'Prenhez registrada', `Vaca ${novo.identificacaoVaca} registrada com sucesso.`);
       return;
     }
 
     if (!prenhezForm.id) {
       setErroPrenhez('Registro de prenhez invalido para edicao.');
+      mostrarToast('error', 'Registro invalido', 'Nao foi possivel identificar o registro para edicao.');
       return;
     }
 
     const atual = snapshot.prenhezes.find((item) => mesmoId(item.id, prenhezForm.id));
     if (!atual) {
       setErroPrenhez('Registro de prenhez nao encontrado.');
+      mostrarToast('error', 'Registro nao encontrado', 'Atualize a tela e tente novamente.');
       return;
     }
 
     const atualizado = atualizarPrenhez(prenhezForm.id, payload);
     if (!atualizado) {
       setErroPrenhez('Nao foi possivel atualizar o registro de prenhez.');
+      mostrarToast('error', 'Falha ao atualizar', 'Nao foi possivel atualizar o registro de prenhez.');
       return;
     }
 
@@ -1126,6 +1222,7 @@ function App() {
 
     recarregar();
     fecharFormularioPrenhez();
+    mostrarToast('success', 'Prenhez atualizada', `Vaca ${atualizado.identificacaoVaca} atualizada.`);
   }
 
   function onRemoverPrenhez(prenhezId: string) {
@@ -1138,7 +1235,10 @@ function App() {
     if (!confirmar) return;
 
     const removido = removerPrenhez(prenhezId);
-    if (!removido) return;
+    if (!removido) {
+      mostrarToast('error', 'Falha ao remover', 'Nao foi possivel remover o registro de prenhez.');
+      return;
+    }
 
     if (fazendaAtivaId) {
       registrarHistorico(fazendaAtivaId, 'prenhez', `Prenhez removida - Vaca: ${removido.identificacaoVaca}`, {
@@ -1160,6 +1260,7 @@ function App() {
     }
 
     recarregar();
+    mostrarToast('success', 'Prenhez removida', `Registro da vaca ${removido.identificacaoVaca} removido.`);
   }
 
   function abrirFormularioNovaDoenca() {
@@ -1208,6 +1309,7 @@ function App() {
 
     if (!fazendaAtivaId) {
       setErroDoenca('Selecione uma fazenda antes de salvar uma doenca.');
+      mostrarToast('error', 'Sem fazenda ativa', 'Selecione uma fazenda antes de salvar uma doenca.');
       return;
     }
 
@@ -1223,16 +1325,19 @@ function App() {
 
     if (!payload.identificacaoAnimal.trim()) {
       setErroDoenca('Informe a identificacao do animal.');
+      mostrarToast('error', 'Animal obrigatorio', 'Informe a identificacao do animal.');
       return;
     }
 
     if (!payload.nomeDoenca.trim()) {
       setErroDoenca('Informe o nome da doenca.');
+      mostrarToast('error', 'Doenca obrigatoria', 'Informe o nome da doenca.');
       return;
     }
 
     if (!payload.dataRegistro) {
       setErroDoenca('Informe a data do registro.');
+      mostrarToast('error', 'Data obrigatoria', 'Informe a data do registro da doenca.');
       return;
     }
 
@@ -1240,6 +1345,7 @@ function App() {
       const nova = criarDoenca(fazendaAtivaId, payload);
       if (!nova) {
         setErroDoenca('Nao foi possivel salvar o registro de doenca.');
+        mostrarToast('error', 'Falha ao salvar', 'Nao foi possivel salvar o registro de doenca.');
         return;
       }
 
@@ -1264,23 +1370,27 @@ function App() {
 
       recarregar();
       fecharFormularioDoenca();
+      mostrarToast('success', 'Doenca registrada', `${nova.nomeDoenca} registrada para ${nova.identificacaoAnimal}.`);
       return;
     }
 
     if (!doencaForm.id) {
       setErroDoenca('Registro de doenca invalido para edicao.');
+      mostrarToast('error', 'Registro invalido', 'Nao foi possivel identificar o registro para edicao.');
       return;
     }
 
     const atual = snapshot.doencas.find((item) => mesmoId(item.id, doencaForm.id));
     if (!atual) {
       setErroDoenca('Registro de doenca nao encontrado.');
+      mostrarToast('error', 'Registro nao encontrado', 'Atualize a tela e tente novamente.');
       return;
     }
 
     const atualizada = atualizarDoenca(doencaForm.id, payload);
     if (!atualizada) {
       setErroDoenca('Nao foi possivel atualizar o registro de doenca.');
+      mostrarToast('error', 'Falha ao atualizar', 'Nao foi possivel atualizar o registro de doenca.');
       return;
     }
 
@@ -1314,6 +1424,7 @@ function App() {
 
     recarregar();
     fecharFormularioDoenca();
+    mostrarToast('success', 'Doenca atualizada', `${atualizada.nomeDoenca} foi atualizada.`);
   }
 
   function onRemoverDoenca(doencaId: string) {
@@ -1326,7 +1437,10 @@ function App() {
     if (!confirmar) return;
 
     const removida = removerDoenca(doencaId);
-    if (!removida) return;
+    if (!removida) {
+      mostrarToast('error', 'Falha ao remover', 'Nao foi possivel remover o registro de doenca.');
+      return;
+    }
 
     if (fazendaAtivaId) {
       registrarHistorico(
@@ -1354,6 +1468,7 @@ function App() {
     }
 
     recarregar();
+    mostrarToast('success', 'Doenca removida', `${removida.nomeDoenca} foi removida.`);
   }
 
   function abrirDetalhesHistorico(registroId: string) {
@@ -1382,10 +1497,27 @@ function App() {
             </select>
           </label>
 
-          <button className="btn ghost farm-manage-btn" type="button" onClick={abrirPainelFazendas}>
-            <span className="farm-action-icon" aria-hidden="true">⚙</span>
-            <span className="farm-action-text">Gerenciar</span>
-          </button>
+          <div className="farm-actions">
+            <button
+              className={
+                altoContrasteAtivo
+                  ? 'btn farm-action farm-contrast-btn contrast-on'
+                  : 'btn ghost farm-action farm-contrast-btn'
+              }
+              type="button"
+              onClick={alternarAltoContraste}
+              aria-pressed={altoContrasteAtivo}
+              title="Alternar alto contraste"
+            >
+              <span className="farm-action-icon" aria-hidden="true">☀</span>
+              <span className="farm-action-text">Contraste</span>
+            </button>
+
+            <button className="btn ghost farm-action farm-manage-btn" type="button" onClick={abrirPainelFazendas}>
+              <span className="farm-action-icon" aria-hidden="true">⚙</span>
+              <span className="farm-action-text">Gerenciar</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -1471,8 +1603,6 @@ function App() {
         ))}
       </nav>
 
-      {exibirConteudo && <p className="context-hint">{CONTEXTO_ABA[abaAtiva]}</p>}
-
       {!exibirConteudo && (
         <section className="empty-panel">
           <h2>Nenhuma fazenda selecionada</h2>
@@ -1481,10 +1611,9 @@ function App() {
       )}
 
       {exibirConteudo && abaAtiva === 'pasto' && (
-        <section className="panel-list module-panel" aria-label="Lista de pastos">
+        <section className="panel-list module-panel module-pasto" aria-label="Lista de pastos">
           <div className="section-heading">
             <h2>Pastos da fazenda</h2>
-            <p>Cadastre e ajuste lotacao por area com poucos toques.</p>
           </div>
 
           <div className="pasto-toolbar">
@@ -1493,9 +1622,260 @@ function App() {
             </button>
           </div>
 
-          {pastoForm && (
-            <form className="pasto-form" onSubmit={onSalvarPasto}>
-              <h2>{pastoForm.modo === 'novo' ? 'Novo pasto' : 'Editar pasto'}</h2>
+
+          {pastosFiltrados.length === 0 && (
+            <div className="empty-panel">
+              <h2>Sem pastos cadastrados</h2>
+              <p>Use o botao acima para criar o primeiro pasto desta fazenda.</p>
+            </div>
+          )}
+
+          {pastosFiltrados.map((pasto, indice) => {
+            const totalAnimais = (pasto.animaisGrandes || 0) + (pasto.animaisPequenos || 0);
+            const qtdPrenhez = prenhezPorPasto.get(String(pasto.id)) ?? 0;
+            const qtdDoenca = doencasPorPasto.get(String(pasto.id)) ?? 0;
+
+            return (
+              <article
+                className="item-card list-enter-item"
+                style={criarEstiloEntrada(indice)}
+                key={pasto.id}
+              >
+                <header>
+                  <h3>{pasto.nome}</h3>
+                  <span className="chip">{totalAnimais} animais</span>
+                </header>
+                <p>
+                  Grandes: <strong>{pasto.animaisGrandes || 0}</strong> · Pequenos:{' '}
+                  <strong>{pasto.animaisPequenos || 0}</strong>
+                </p>
+                <p>
+                  Registros vinculados: <strong>{qtdPrenhez}</strong> prenhez · <strong>{qtdDoenca}</strong>{' '}
+                  doencas
+                </p>
+                <p>Ultima atualizacao: {formatarData(pasto.dataAtualizacao || pasto.dataCriacao)}</p>
+                {pasto.observacoes && <p className="muted">{pasto.observacoes}</p>}
+
+                <div className="item-actions">
+                  <button className="btn tiny" type="button" onClick={() => abrirFormularioEditarPasto(pasto)}>
+                    Editar
+                  </button>
+                  <button className="btn tiny danger" type="button" onClick={() => onRemoverPasto(String(pasto.id))}>
+                    Remover
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </section>
+      )}
+
+      {exibirConteudo && abaAtiva === 'prenhez' && (
+        <section className="panel-list module-panel module-prenhez" aria-label="Lista de prenhez">
+          <div className="section-heading">
+            <h2>Controle de prenhez</h2>
+          </div>
+
+          <div className="pasto-toolbar">
+            <button className="btn primary" type="button" onClick={abrirFormularioNovaPrenhez}>
+              + Registrar prenhez
+            </button>
+          </div>
+
+
+          {prenhezOrdenadas.length === 0 && (
+            <div className="empty-panel">
+              <h2>Sem registros de prenhez</h2>
+              <p>Use o botao acima para registrar a primeira prenhez desta fazenda.</p>
+            </div>
+          )}
+
+          {prenhezOrdenadas.map((registro, indice) => {
+            const dias = calcularDiasRestantes(registro.dataPrevisaoParto);
+            const pasto = registro.pastoId ? mapaPastos.get(String(registro.pastoId)) : null;
+
+            return (
+              <article
+                className="item-card list-enter-item"
+                style={criarEstiloEntrada(indice, 20)}
+                key={registro.id}
+              >
+                <header>
+                  <h3>Vaca {registro.identificacaoVaca}</h3>
+                  <span className={dias !== null && dias <= 30 ? 'chip warning' : 'chip'}>
+                    {dias === null ? 'Sem previsao' : dias >= 0 ? `${dias} dias` : 'Parto vencido'}
+                  </span>
+                </header>
+                <p>Touro: {registro.identificacaoTouro || 'Nao informado'}</p>
+                <p>Cobertura: {formatarData(registro.dataCobertura)}</p>
+                <p>Previsao de parto: {formatarData(registro.dataPrevisaoParto)}</p>
+                {pasto && <p>Pasto: {pasto}</p>}
+                {registro.observacoes && <p className="muted">{registro.observacoes}</p>}
+
+                <div className="item-actions">
+                  <button className="btn tiny" type="button" onClick={() => abrirFormularioEditarPrenhez(registro)}>
+                    Editar
+                  </button>
+                  <button
+                    className="btn tiny danger"
+                    type="button"
+                    onClick={() => onRemoverPrenhez(String(registro.id))}
+                  >
+                    Remover
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </section>
+      )}
+
+      {exibirConteudo && abaAtiva === 'doenca' && (
+        <section className="panel-list module-panel module-doenca" aria-label="Lista de doencas">
+          <div className="section-heading">
+            <h2>Saude do rebanho</h2>
+          </div>
+
+          <div className="pasto-toolbar">
+            <button className="btn primary" type="button" onClick={abrirFormularioNovaDoenca}>
+              + Registrar doenca
+            </button>
+          </div>
+
+
+          {doencasOrdenadas.length === 0 && (
+            <div className="empty-panel">
+              <h2>Sem registros de doencas</h2>
+              <p>Use o botao acima para registrar a primeira doenca desta fazenda.</p>
+            </div>
+          )}
+
+          {doencasOrdenadas.map((registro, indice) => {
+            const pasto = registro.pastoId ? mapaPastos.get(String(registro.pastoId)) : null;
+
+            return (
+              <article
+                className="item-card list-enter-item"
+                style={criarEstiloEntrada(indice, 20)}
+                key={registro.id}
+              >
+                <header>
+                  <h3>{registro.identificacaoAnimal}</h3>
+                  <span className={`chip status-${registro.status}`}>{STATUS_DOENCA[registro.status]}</span>
+                </header>
+                <p>Doenca: {registro.nomeDoenca}</p>
+                <p>Data: {formatarData(registro.dataRegistro)}</p>
+                {pasto && <p>Pasto: {pasto}</p>}
+                {registro.tratamento && <p>Tratamento: {registro.tratamento}</p>}
+                {registro.observacoes && <p className="muted">{registro.observacoes}</p>}
+
+                <div className="item-actions">
+                  <button className="btn tiny" type="button" onClick={() => abrirFormularioEditarDoenca(registro)}>
+                    Editar
+                  </button>
+                  <button
+                    className="btn tiny danger"
+                    type="button"
+                    onClick={() => onRemoverDoenca(String(registro.id))}
+                  >
+                    Remover
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </section>
+      )}
+
+      {exibirConteudo && abaAtiva === 'historico' && (
+        <section className="panel-list module-panel module-historico" aria-label="Lista de historico">
+          <div className="section-heading">
+            <h2>Historico geral</h2>
+          </div>
+
+          <div className="history-toolbar">
+            <label className="field history-filter">
+              Filtrar por tipo
+              <select
+                value={filtroHistorico}
+                onChange={(evento) => setFiltroHistorico(evento.target.value as FiltroHistorico)}
+              >
+                {FILTROS_HISTORICO.map((filtro) => (
+                  <option key={filtro.id} value={filtro.id}>
+                    {filtro.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {historicoOrdenado.length === 0 && (
+            <div className="empty-panel">
+              <h2>Sem historico nesta fazenda</h2>
+              <p>As acoes salvas pelos modulos legados e migrados ficam concentradas nesta visao.</p>
+            </div>
+          )}
+
+          {historicoOrdenado.length > 0 && historicoFiltradoPorTipo.length === 0 && (
+            <div className="empty-panel">
+              <h2>Nenhum registro para este filtro</h2>
+              <p>Troque o tipo no seletor para visualizar outros eventos.</p>
+            </div>
+          )}
+
+          {historicoAgrupado.map((grupo) => (
+            <div className="history-group" key={grupo.data}>
+              <h3 className="history-date">{grupo.data}</h3>
+              <div className="history-group-list">
+                {grupo.itens.map((item, indice) => (
+                  <button
+                    className="history-item list-enter-item"
+                    style={criarEstiloEntrada(indice)}
+                    type="button"
+                    key={item.id}
+                    onClick={() => abrirDetalhesHistorico(String(item.id))}
+                  >
+                    <div className="history-item-main">
+                      <p className="history-item-description">{item.descricao}</p>
+                      <span className="chip">{formatarTipoHistorico(item)}</span>
+                    </div>
+                    <span className="history-item-time">{formatarHora(item.dataCriacao)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+
+        </section>
+      )}
+
+      {pastoForm && (
+        <div
+          className="farm-sheet-overlay"
+          role="presentation"
+          tabIndex={-1}
+          onClick={(evento) => {
+            if (evento.target === evento.currentTarget) {
+              fecharFormularioPasto();
+            }
+          }}
+          onKeyDown={(evento) => {
+            if (evento.key === 'Escape') {
+              fecharFormularioPasto();
+            }
+          }}
+        >
+          <section className="farm-sheet" role="dialog" aria-modal="true" aria-labelledby="pasto-sheet-title">
+            <div className="farm-sheet-handle" aria-hidden="true" />
+
+            <div className="farm-sheet-header">
+              <h3 id="pasto-sheet-title">{pastoForm.modo === 'novo' ? 'Novo pasto' : 'Editar pasto'}</h3>
+              <button className="btn tiny" type="button" onClick={fecharFormularioPasto}>
+                Fechar
+              </button>
+            </div>
+
+            <form className="pasto-form sheet-form" onSubmit={onSalvarPasto}>
               <div className="form-grid">
                 <label className="field">
                   Nome do pasto
@@ -1554,68 +1934,37 @@ function App() {
                 </button>
               </div>
             </form>
-          )}
-
-          {pastosFiltrados.length === 0 && (
-            <div className="empty-panel">
-              <h2>Sem pastos cadastrados</h2>
-              <p>Use o botao acima para criar o primeiro pasto desta fazenda.</p>
-            </div>
-          )}
-
-          {pastosFiltrados.map((pasto) => {
-            const totalAnimais = (pasto.animaisGrandes || 0) + (pasto.animaisPequenos || 0);
-            const qtdPrenhez = prenhezPorPasto.get(String(pasto.id)) ?? 0;
-            const qtdDoenca = doencasPorPasto.get(String(pasto.id)) ?? 0;
-
-            return (
-              <article className="item-card" key={pasto.id}>
-                <header>
-                  <h3>{pasto.nome}</h3>
-                  <span className="chip">{totalAnimais} animais</span>
-                </header>
-                <p>
-                  Grandes: <strong>{pasto.animaisGrandes || 0}</strong> · Pequenos:{' '}
-                  <strong>{pasto.animaisPequenos || 0}</strong>
-                </p>
-                <p>
-                  Registros vinculados: <strong>{qtdPrenhez}</strong> prenhez · <strong>{qtdDoenca}</strong>{' '}
-                  doencas
-                </p>
-                <p>Ultima atualizacao: {formatarData(pasto.dataAtualizacao || pasto.dataCriacao)}</p>
-                {pasto.observacoes && <p className="muted">{pasto.observacoes}</p>}
-
-                <div className="item-actions">
-                  <button className="btn tiny" type="button" onClick={() => abrirFormularioEditarPasto(pasto)}>
-                    Editar
-                  </button>
-                  <button className="btn tiny danger" type="button" onClick={() => onRemoverPasto(String(pasto.id))}>
-                    Remover
-                  </button>
-                </div>
-              </article>
-            );
-          })}
-        </section>
+          </section>
+        </div>
       )}
 
-      {exibirConteudo && abaAtiva === 'prenhez' && (
-        <section className="panel-list module-panel" aria-label="Lista de prenhez">
-          <div className="section-heading">
-            <h2>Controle de prenhez</h2>
-            <p>Priorize os partos proximos e mantenha previsoes atualizadas.</p>
-          </div>
+      {prenhezForm && (
+        <div
+          className="farm-sheet-overlay"
+          role="presentation"
+          tabIndex={-1}
+          onClick={(evento) => {
+            if (evento.target === evento.currentTarget) {
+              fecharFormularioPrenhez();
+            }
+          }}
+          onKeyDown={(evento) => {
+            if (evento.key === 'Escape') {
+              fecharFormularioPrenhez();
+            }
+          }}
+        >
+          <section className="farm-sheet" role="dialog" aria-modal="true" aria-labelledby="prenhez-sheet-title">
+            <div className="farm-sheet-handle" aria-hidden="true" />
 
-          <div className="pasto-toolbar">
-            <button className="btn primary" type="button" onClick={abrirFormularioNovaPrenhez}>
-              + Registrar prenhez
-            </button>
-          </div>
+            <div className="farm-sheet-header">
+              <h3 id="prenhez-sheet-title">{prenhezForm.modo === 'novo' ? 'Nova prenhez' : 'Editar prenhez'}</h3>
+              <button className="btn tiny" type="button" onClick={fecharFormularioPrenhez}>
+                Fechar
+              </button>
+            </div>
 
-          {prenhezForm && (
-            <form className="pasto-form" onSubmit={onSalvarPrenhez}>
-              <h2>{prenhezForm.modo === 'novo' ? 'Nova prenhez' : 'Editar prenhez'}</h2>
-
+            <form className="pasto-form sheet-form" onSubmit={onSalvarPrenhez}>
               <div className="form-grid">
                 <label className="field">
                   Identificacao da vaca
@@ -1699,68 +2048,37 @@ function App() {
                 </button>
               </div>
             </form>
-          )}
-
-          {prenhezOrdenadas.length === 0 && (
-            <div className="empty-panel">
-              <h2>Sem registros de prenhez</h2>
-              <p>Use o botao acima para registrar a primeira prenhez desta fazenda.</p>
-            </div>
-          )}
-
-          {prenhezOrdenadas.map((registro) => {
-            const dias = calcularDiasRestantes(registro.dataPrevisaoParto);
-            const pasto = registro.pastoId ? mapaPastos.get(String(registro.pastoId)) : null;
-
-            return (
-              <article className="item-card" key={registro.id}>
-                <header>
-                  <h3>Vaca {registro.identificacaoVaca}</h3>
-                  <span className={dias !== null && dias <= 30 ? 'chip warning' : 'chip'}>
-                    {dias === null ? 'Sem previsao' : dias >= 0 ? `${dias} dias` : 'Parto vencido'}
-                  </span>
-                </header>
-                <p>Touro: {registro.identificacaoTouro || 'Nao informado'}</p>
-                <p>Cobertura: {formatarData(registro.dataCobertura)}</p>
-                <p>Previsao de parto: {formatarData(registro.dataPrevisaoParto)}</p>
-                {pasto && <p>Pasto: {pasto}</p>}
-                {registro.observacoes && <p className="muted">{registro.observacoes}</p>}
-
-                <div className="item-actions">
-                  <button className="btn tiny" type="button" onClick={() => abrirFormularioEditarPrenhez(registro)}>
-                    Editar
-                  </button>
-                  <button
-                    className="btn tiny danger"
-                    type="button"
-                    onClick={() => onRemoverPrenhez(String(registro.id))}
-                  >
-                    Remover
-                  </button>
-                </div>
-              </article>
-            );
-          })}
-        </section>
+          </section>
+        </div>
       )}
 
-      {exibirConteudo && abaAtiva === 'doenca' && (
-        <section className="panel-list module-panel" aria-label="Lista de doencas">
-          <div className="section-heading">
-            <h2>Saude do rebanho</h2>
-            <p>Visualize rapidamente status, tratamento e evolucao dos casos.</p>
-          </div>
+      {doencaForm && (
+        <div
+          className="farm-sheet-overlay"
+          role="presentation"
+          tabIndex={-1}
+          onClick={(evento) => {
+            if (evento.target === evento.currentTarget) {
+              fecharFormularioDoenca();
+            }
+          }}
+          onKeyDown={(evento) => {
+            if (evento.key === 'Escape') {
+              fecharFormularioDoenca();
+            }
+          }}
+        >
+          <section className="farm-sheet" role="dialog" aria-modal="true" aria-labelledby="doenca-sheet-title">
+            <div className="farm-sheet-handle" aria-hidden="true" />
 
-          <div className="pasto-toolbar">
-            <button className="btn primary" type="button" onClick={abrirFormularioNovaDoenca}>
-              + Registrar doenca
-            </button>
-          </div>
+            <div className="farm-sheet-header">
+              <h3 id="doenca-sheet-title">{doencaForm.modo === 'novo' ? 'Nova doenca' : 'Editar doenca'}</h3>
+              <button className="btn tiny" type="button" onClick={fecharFormularioDoenca}>
+                Fechar
+              </button>
+            </div>
 
-          {doencaForm && (
-            <form className="pasto-form" onSubmit={onSalvarDoenca}>
-              <h2>{doencaForm.modo === 'novo' ? 'Nova doenca' : 'Editar doenca'}</h2>
-
+            <form className="pasto-form sheet-form" onSubmit={onSalvarDoenca}>
               <div className="form-grid">
                 <label className="field">
                   Identificacao do animal
@@ -1858,184 +2176,115 @@ function App() {
                 </button>
               </div>
             </form>
-          )}
+          </section>
+        </div>
+      )}
 
-          {doencasOrdenadas.length === 0 && (
-            <div className="empty-panel">
-              <h2>Sem registros de doencas</h2>
-              <p>Use o botao acima para registrar a primeira doenca desta fazenda.</p>
+      {historicoSelecionado && (
+        <div
+          className="history-modal-overlay"
+          role="presentation"
+          tabIndex={-1}
+          onClick={(evento) => {
+            if (evento.target === evento.currentTarget) {
+              fecharDetalhesHistorico();
+            }
+          }}
+          onKeyDown={(evento) => {
+            if (evento.key === 'Escape') {
+              fecharDetalhesHistorico();
+            }
+          }}
+        >
+          <div className="history-modal" role="dialog" aria-modal="true" aria-labelledby="history-modal-title">
+            <div className="farm-sheet-handle" aria-hidden="true" />
+
+            <div className="history-modal-header">
+              <h3 id="history-modal-title">Detalhes do historico</h3>
+              <button className="btn tiny" type="button" onClick={fecharDetalhesHistorico}>
+                Fechar
+              </button>
             </div>
-          )}
 
-          {doencasOrdenadas.map((registro) => {
-            const pasto = registro.pastoId ? mapaPastos.get(String(registro.pastoId)) : null;
+            <p className="history-modal-description">{historicoSelecionado.descricao}</p>
 
-            return (
-              <article className="item-card" key={registro.id}>
-                <header>
-                  <h3>{registro.identificacaoAnimal}</h3>
-                  <span className={`chip status-${registro.status}`}>{STATUS_DOENCA[registro.status]}</span>
-                </header>
-                <p>Doenca: {registro.nomeDoenca}</p>
-                <p>Data: {formatarData(registro.dataRegistro)}</p>
-                {pasto && <p>Pasto: {pasto}</p>}
-                {registro.tratamento && <p>Tratamento: {registro.tratamento}</p>}
-                {registro.observacoes && <p className="muted">{registro.observacoes}</p>}
-
-                <div className="item-actions">
-                  <button className="btn tiny" type="button" onClick={() => abrirFormularioEditarDoenca(registro)}>
-                    Editar
-                  </button>
-                  <button
-                    className="btn tiny danger"
-                    type="button"
-                    onClick={() => onRemoverDoenca(String(registro.id))}
-                  >
-                    Remover
-                  </button>
+            <div className="history-details-grid">
+              <article className="history-details-card">
+                <h4>Resumo</h4>
+                <div className="history-details-line">
+                  <span>Tipo</span>
+                  <strong>{formatarTipoHistorico(historicoSelecionado)}</strong>
+                </div>
+                <div className="history-details-line">
+                  <span>Quando</span>
+                  <strong>{formatarDataHora(historicoSelecionado.dataCriacao)}</strong>
                 </div>
               </article>
-            );
-          })}
-        </section>
+
+              {detalhesHistoricoSelecionado?.antes && (
+                <article className="history-details-card">
+                  <h4>Antes</h4>
+                  {Object.entries(detalhesHistoricoSelecionado.antes).map(([chave, valor]) => (
+                    <div className="history-details-line" key={`antes-${chave}`}>
+                      <span>{chave}</span>
+                      <strong>{String(valor)}</strong>
+                    </div>
+                  ))}
+                </article>
+              )}
+
+              {detalhesHistoricoSelecionado?.depois && (
+                <article className="history-details-card">
+                  <h4>Agora</h4>
+                  {Object.entries(detalhesHistoricoSelecionado.depois).map(([chave, valor]) => (
+                    <div className="history-details-line" key={`depois-${chave}`}>
+                      <span>{chave}</span>
+                      <strong>{String(valor)}</strong>
+                    </div>
+                  ))}
+                </article>
+              )}
+            </div>
+
+            {detalhesHistoricoSelecionado?.info && (
+              <p className="history-details-info">{detalhesHistoricoSelecionado.info}</p>
+            )}
+
+            {!detalhesHistoricoSelecionado?.info &&
+              !detalhesHistoricoSelecionado?.antes &&
+              !detalhesHistoricoSelecionado?.depois && (
+                <p className="history-details-info">Sem detalhes adicionais salvos para este registro.</p>
+              )}
+          </div>
+        </div>
       )}
 
-      {exibirConteudo && abaAtiva === 'historico' && (
-        <section className="panel-list module-panel" aria-label="Lista de historico">
-          <div className="section-heading">
-            <h2>Historico geral</h2>
-            <p>Consulte o que mudou e abra detalhes completos de cada acao.</p>
-          </div>
-
-          <div className="history-toolbar">
-            <label className="field history-filter">
-              Filtrar por tipo
-              <select
-                value={filtroHistorico}
-                onChange={(evento) => setFiltroHistorico(evento.target.value as FiltroHistorico)}
-              >
-                {FILTROS_HISTORICO.map((filtro) => (
-                  <option key={filtro.id} value={filtro.id}>
-                    {filtro.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          {historicoOrdenado.length === 0 && (
-            <div className="empty-panel">
-              <h2>Sem historico nesta fazenda</h2>
-              <p>As acoes salvas pelos modulos legados e migrados ficam concentradas nesta visao.</p>
+      <div className="toast-stack" aria-live="polite" aria-atomic="false">
+        {toasts.map((toast) => (
+          <article
+            key={toast.id}
+            className={`toast-item toast-${toast.tipo}`}
+            role="status"
+            aria-label={toast.titulo}
+          >
+            <span className="toast-symbol" aria-hidden="true">
+              {toast.tipo === 'success' ? '✓' : toast.tipo === 'error' ? '!' : 'i'}
+            </span>
+            <div className="toast-copy">
+              <strong>{toast.titulo}</strong>
+              {toast.descricao && <p>{toast.descricao}</p>}
             </div>
-          )}
-
-          {historicoOrdenado.length > 0 && historicoFiltradoPorTipo.length === 0 && (
-            <div className="empty-panel">
-              <h2>Nenhum registro para este filtro</h2>
-              <p>Troque o tipo no seletor para visualizar outros eventos.</p>
-            </div>
-          )}
-
-          {historicoAgrupado.map((grupo) => (
-            <div className="history-group" key={grupo.data}>
-              <h3 className="history-date">{grupo.data}</h3>
-              <div className="history-group-list">
-                {grupo.itens.map((item) => (
-                  <button
-                    className="history-item"
-                    type="button"
-                    key={item.id}
-                    onClick={() => abrirDetalhesHistorico(String(item.id))}
-                  >
-                    <div className="history-item-main">
-                      <p className="history-item-description">{item.descricao}</p>
-                      <span className="chip">{formatarTipoHistorico(item)}</span>
-                    </div>
-                    <span className="history-item-time">{formatarHora(item.dataCriacao)}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-
-          {historicoSelecionado && (
-            <div
-              className="history-modal-overlay"
-              role="presentation"
-              onClick={(evento) => {
-                if (evento.target === evento.currentTarget) {
-                  fecharDetalhesHistorico();
-                }
-              }}
-              onKeyDown={(evento) => {
-                if (evento.key === 'Escape') {
-                  fecharDetalhesHistorico();
-                }
-              }}
+            <button
+              className="toast-close"
+              type="button"
+              onClick={() => removerToast(toast.id)}
+              aria-label="Fechar notificacao"
             >
-              <div className="history-modal" role="dialog" aria-modal="true" aria-labelledby="history-modal-title">
-                <div className="history-modal-header">
-                  <h3 id="history-modal-title">Detalhes do historico</h3>
-                  <button className="btn tiny" type="button" onClick={fecharDetalhesHistorico}>
-                    Fechar
-                  </button>
-                </div>
-
-                <p className="history-modal-description">{historicoSelecionado.descricao}</p>
-
-                <div className="history-details-grid">
-                  <article className="history-details-card">
-                    <h4>Resumo</h4>
-                    <div className="history-details-line">
-                      <span>Tipo</span>
-                      <strong>{formatarTipoHistorico(historicoSelecionado)}</strong>
-                    </div>
-                    <div className="history-details-line">
-                      <span>Quando</span>
-                      <strong>{formatarDataHora(historicoSelecionado.dataCriacao)}</strong>
-                    </div>
-                  </article>
-
-                  {detalhesHistoricoSelecionado?.antes && (
-                    <article className="history-details-card">
-                      <h4>Antes</h4>
-                      {Object.entries(detalhesHistoricoSelecionado.antes).map(([chave, valor]) => (
-                        <div className="history-details-line" key={`antes-${chave}`}>
-                          <span>{chave}</span>
-                          <strong>{String(valor)}</strong>
-                        </div>
-                      ))}
-                    </article>
-                  )}
-
-                  {detalhesHistoricoSelecionado?.depois && (
-                    <article className="history-details-card">
-                      <h4>Agora</h4>
-                      {Object.entries(detalhesHistoricoSelecionado.depois).map(([chave, valor]) => (
-                        <div className="history-details-line" key={`depois-${chave}`}>
-                          <span>{chave}</span>
-                          <strong>{String(valor)}</strong>
-                        </div>
-                      ))}
-                    </article>
-                  )}
-                </div>
-
-                {detalhesHistoricoSelecionado?.info && (
-                  <p className="history-details-info">{detalhesHistoricoSelecionado.info}</p>
-                )}
-
-                {!detalhesHistoricoSelecionado?.info &&
-                  !detalhesHistoricoSelecionado?.antes &&
-                  !detalhesHistoricoSelecionado?.depois && (
-                    <p className="history-details-info">Sem detalhes adicionais salvos para este registro.</p>
-                  )}
-              </div>
-            </div>
-          )}
-        </section>
-      )}
+              ×
+            </button>
+          </article>
+        ))}
+      </div>
     </div>
   );
 }

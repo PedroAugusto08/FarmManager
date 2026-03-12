@@ -17,9 +17,35 @@ export const STORAGE_KEYS = {
   fazendaAtiva: 'fazenda_ativa'
 } as const;
 
+function lerItem(chave: string): string | null {
+  try {
+    return localStorage.getItem(chave);
+  } catch {
+    return null;
+  }
+}
+
+function escreverItem(chave: string, valor: string): boolean {
+  try {
+    localStorage.setItem(chave, valor);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function removerItem(chave: string): boolean {
+  try {
+    localStorage.removeItem(chave);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function lerLista<T>(chave: string): T[] {
   try {
-    const bruto = localStorage.getItem(chave);
+    const bruto = lerItem(chave);
     const parseado = bruto ? (JSON.parse(bruto) as unknown) : [];
     return Array.isArray(parseado) ? (parseado as T[]) : [];
   } catch {
@@ -27,8 +53,8 @@ function lerLista<T>(chave: string): T[] {
   }
 }
 
-function salvarLista<T>(chave: string, dados: T[]): void {
-  localStorage.setItem(chave, JSON.stringify(dados));
+function salvarLista<T>(chave: string, dados: T[]): boolean {
+  return escreverItem(chave, JSON.stringify(dados));
 }
 
 function mesmoId(valorA: unknown, valorB: unknown): boolean {
@@ -49,7 +75,7 @@ export function carregarSnapshot() {
   const prenhezes = lerLista<Prenhez>(STORAGE_KEYS.prenhez);
   const doencas = lerLista<Doenca>(STORAGE_KEYS.doencas);
   const historico = lerLista<Historico>(STORAGE_KEYS.historico);
-  const fazendaAtiva = localStorage.getItem(STORAGE_KEYS.fazendaAtiva);
+  const fazendaAtiva = lerItem(STORAGE_KEYS.fazendaAtiva);
 
   return {
     fazendas,
@@ -72,7 +98,8 @@ export function criarFazenda(nome: string): Fazenda | null {
     dataCriacao: new Date().toISOString()
   };
 
-  salvarLista(STORAGE_KEYS.fazendas, [...fazendas, nova]);
+  const ok = salvarLista(STORAGE_KEYS.fazendas, [...fazendas, nova]);
+  if (!ok) return null;
   return nova;
 }
 
@@ -92,7 +119,8 @@ export function atualizarFazenda(fazendaId: string, nome: string): Fazenda | nul
 
   const copia = [...fazendas];
   copia[indice] = atualizada;
-  salvarLista(STORAGE_KEYS.fazendas, copia);
+  const ok = salvarLista(STORAGE_KEYS.fazendas, copia);
+  if (!ok) return null;
   return atualizada;
 }
 
@@ -137,7 +165,8 @@ export function criarPasto(fazendaId: string, payload: PastoPayload): Pasto | nu
   };
 
   const pastos = lerLista<Pasto>(STORAGE_KEYS.pastos);
-  salvarLista(STORAGE_KEYS.pastos, [...pastos, novo]);
+  const ok = salvarLista(STORAGE_KEYS.pastos, [...pastos, novo]);
+  if (!ok) return null;
   return novo;
 }
 
@@ -167,7 +196,8 @@ export function atualizarPasto(
 
   const copia = [...pastos];
   copia[indice] = atual;
-  salvarLista(STORAGE_KEYS.pastos, copia);
+  const ok = salvarLista(STORAGE_KEYS.pastos, copia);
+  if (!ok) return null;
   return atual;
 }
 
@@ -177,7 +207,8 @@ export function removerPasto(pastoId: string): Pasto | null {
   if (!alvo) return null;
 
   const filtrados = pastos.filter((item) => !mesmoId(item.id, pastoId));
-  salvarLista(STORAGE_KEYS.pastos, filtrados);
+  const ok = salvarLista(STORAGE_KEYS.pastos, filtrados);
+  if (!ok) return null;
   return alvo;
 }
 
@@ -198,7 +229,8 @@ export function criarPrenhez(fazendaId: string, payload: PrenhezPayload): Prenhe
   };
 
   const registros = lerLista<Prenhez>(STORAGE_KEYS.prenhez);
-  salvarLista(STORAGE_KEYS.prenhez, [...registros, novo]);
+  const ok = salvarLista(STORAGE_KEYS.prenhez, [...registros, novo]);
+  if (!ok) return null;
   return novo;
 }
 
@@ -222,7 +254,8 @@ export function atualizarPrenhez(prenhezId: string, payload: PrenhezPayload): Pr
 
   const copia = [...registros];
   copia[indice] = atual;
-  salvarLista(STORAGE_KEYS.prenhez, copia);
+  const ok = salvarLista(STORAGE_KEYS.prenhez, copia);
+  if (!ok) return null;
   return atual;
 }
 
@@ -232,7 +265,8 @@ export function removerPrenhez(prenhezId: string): Prenhez | null {
   if (!alvo) return null;
 
   const filtrados = registros.filter((item) => !mesmoId(item.id, prenhezId));
-  salvarLista(STORAGE_KEYS.prenhez, filtrados);
+  const ok = salvarLista(STORAGE_KEYS.prenhez, filtrados);
+  if (!ok) return null;
   return alvo;
 }
 
@@ -255,7 +289,8 @@ export function criarDoenca(fazendaId: string, payload: DoencaPayload): Doenca |
   };
 
   const registros = lerLista<Doenca>(STORAGE_KEYS.doencas);
-  salvarLista(STORAGE_KEYS.doencas, [...registros, novo]);
+  const ok = salvarLista(STORAGE_KEYS.doencas, [...registros, novo]);
+  if (!ok) return null;
   return novo;
 }
 
@@ -281,7 +316,8 @@ export function atualizarDoenca(doencaId: string, payload: DoencaPayload): Doenc
 
   const copia = [...registros];
   copia[indice] = atual;
-  salvarLista(STORAGE_KEYS.doencas, copia);
+  const ok = salvarLista(STORAGE_KEYS.doencas, copia);
+  if (!ok) return null;
   return atual;
 }
 
@@ -291,7 +327,8 @@ export function removerDoenca(doencaId: string): Doenca | null {
   if (!alvo) return null;
 
   const filtrados = registros.filter((item) => !mesmoId(item.id, doencaId));
-  salvarLista(STORAGE_KEYS.doencas, filtrados);
+  const ok = salvarLista(STORAGE_KEYS.doencas, filtrados);
+  if (!ok) return null;
   return alvo;
 }
 
@@ -313,7 +350,8 @@ export function registrarHistorico(
     ...(meta ? { meta } : {})
   };
 
-  salvarLista(STORAGE_KEYS.historico, [...historico, novo]);
+  const ok = salvarLista(STORAGE_KEYS.historico, [...historico, novo]);
+  if (!ok) return null;
   return novo;
 }
 
@@ -322,16 +360,16 @@ export function removerFazenda(fazendaId: string): void {
   const filtradas = fazendas.filter((fazenda) => fazenda.id !== fazendaId);
   salvarLista(STORAGE_KEYS.fazendas, filtradas);
 
-  if (localStorage.getItem(STORAGE_KEYS.fazendaAtiva) === fazendaId) {
-    localStorage.removeItem(STORAGE_KEYS.fazendaAtiva);
+  if (lerItem(STORAGE_KEYS.fazendaAtiva) === fazendaId) {
+    removerItem(STORAGE_KEYS.fazendaAtiva);
   }
 }
 
 export function definirFazendaAtiva(fazendaId: string | null): void {
   if (!fazendaId) {
-    localStorage.removeItem(STORAGE_KEYS.fazendaAtiva);
+    removerItem(STORAGE_KEYS.fazendaAtiva);
     return;
   }
 
-  localStorage.setItem(STORAGE_KEYS.fazendaAtiva, fazendaId);
+  escreverItem(STORAGE_KEYS.fazendaAtiva, fazendaId);
 }
