@@ -1,4 +1,12 @@
-import type { Doenca, Fazenda, Historico, Pasto, Prenhez } from '../types/domain';
+import type {
+  Doenca,
+  Fazenda,
+  Historico,
+  Pasto,
+  Prenhez,
+  StatusDoenca,
+  TipoHistorico
+} from '../types/domain';
 
 export const STORAGE_KEYS = {
   fazendas: 'fazenda_fazendas',
@@ -21,6 +29,10 @@ function lerLista<T>(chave: string): T[] {
 
 function salvarLista<T>(chave: string, dados: T[]): void {
   localStorage.setItem(chave, JSON.stringify(dados));
+}
+
+function mesmoId(valorA: unknown, valorB: unknown): boolean {
+  return String(valorA) === String(valorB);
 }
 
 function gerarId(): string {
@@ -62,6 +74,227 @@ export function criarFazenda(nome: string): Fazenda | null {
 
   salvarLista(STORAGE_KEYS.fazendas, [...fazendas, nova]);
   return nova;
+}
+
+export interface PastoPayload {
+  nome: string;
+  animaisGrandes: number;
+  animaisPequenos: number;
+  observacoes?: string;
+}
+
+export interface PrenhezPayload {
+  identificacaoVaca: string;
+  identificacaoTouro?: string;
+  dataCobertura?: string;
+  dataPrevisaoParto?: string;
+  observacoes?: string;
+  pastoId?: string | null;
+}
+
+export interface DoencaPayload {
+  identificacaoAnimal: string;
+  nomeDoenca: string;
+  dataRegistro: string;
+  status: StatusDoenca;
+  tratamento?: string;
+  observacoes?: string;
+  pastoId?: string | null;
+}
+
+export function criarPasto(fazendaId: string, payload: PastoPayload): Pasto | null {
+  const nome = payload.nome.trim();
+  if (!fazendaId || !nome) return null;
+
+  const novo: Pasto = {
+    id: gerarId(),
+    fazendaId,
+    nome,
+    animaisGrandes: Math.max(0, payload.animaisGrandes || 0),
+    animaisPequenos: Math.max(0, payload.animaisPequenos || 0),
+    observacoes: payload.observacoes?.trim() || '',
+    dataCriacao: new Date().toISOString()
+  };
+
+  const pastos = lerLista<Pasto>(STORAGE_KEYS.pastos);
+  salvarLista(STORAGE_KEYS.pastos, [...pastos, novo]);
+  return novo;
+}
+
+export function atualizarPasto(
+  pastoId: string,
+  payload: PastoPayload,
+  dataAtualizacao?: string
+): Pasto | null {
+  const pastos = lerLista<Pasto>(STORAGE_KEYS.pastos);
+  const indice = pastos.findIndex((item) => mesmoId(item.id, pastoId));
+  if (indice < 0) return null;
+
+  const nome = payload.nome.trim();
+  if (!nome) return null;
+
+  const atual: Pasto = {
+    ...pastos[indice],
+    nome,
+    animaisGrandes: Math.max(0, payload.animaisGrandes || 0),
+    animaisPequenos: Math.max(0, payload.animaisPequenos || 0),
+    observacoes: payload.observacoes?.trim() || ''
+  };
+
+  if (dataAtualizacao) {
+    atual.dataAtualizacao = dataAtualizacao;
+  }
+
+  const copia = [...pastos];
+  copia[indice] = atual;
+  salvarLista(STORAGE_KEYS.pastos, copia);
+  return atual;
+}
+
+export function removerPasto(pastoId: string): Pasto | null {
+  const pastos = lerLista<Pasto>(STORAGE_KEYS.pastos);
+  const alvo = pastos.find((item) => mesmoId(item.id, pastoId)) ?? null;
+  if (!alvo) return null;
+
+  const filtrados = pastos.filter((item) => !mesmoId(item.id, pastoId));
+  salvarLista(STORAGE_KEYS.pastos, filtrados);
+  return alvo;
+}
+
+export function criarPrenhez(fazendaId: string, payload: PrenhezPayload): Prenhez | null {
+  const identificacaoVaca = payload.identificacaoVaca.trim();
+  if (!fazendaId || !identificacaoVaca) return null;
+
+  const novo: Prenhez = {
+    id: gerarId(),
+    fazendaId,
+    identificacaoVaca,
+    identificacaoTouro: payload.identificacaoTouro?.trim() || '',
+    dataCobertura: payload.dataCobertura || '',
+    dataPrevisaoParto: payload.dataPrevisaoParto || '',
+    observacoes: payload.observacoes?.trim() || '',
+    pastoId: payload.pastoId || null,
+    dataCriacao: new Date().toISOString()
+  };
+
+  const registros = lerLista<Prenhez>(STORAGE_KEYS.prenhez);
+  salvarLista(STORAGE_KEYS.prenhez, [...registros, novo]);
+  return novo;
+}
+
+export function atualizarPrenhez(prenhezId: string, payload: PrenhezPayload): Prenhez | null {
+  const registros = lerLista<Prenhez>(STORAGE_KEYS.prenhez);
+  const indice = registros.findIndex((item) => mesmoId(item.id, prenhezId));
+  if (indice < 0) return null;
+
+  const identificacaoVaca = payload.identificacaoVaca.trim();
+  if (!identificacaoVaca) return null;
+
+  const atual: Prenhez = {
+    ...registros[indice],
+    identificacaoVaca,
+    identificacaoTouro: payload.identificacaoTouro?.trim() || '',
+    dataCobertura: payload.dataCobertura || '',
+    dataPrevisaoParto: payload.dataPrevisaoParto || '',
+    observacoes: payload.observacoes?.trim() || '',
+    pastoId: payload.pastoId || null
+  };
+
+  const copia = [...registros];
+  copia[indice] = atual;
+  salvarLista(STORAGE_KEYS.prenhez, copia);
+  return atual;
+}
+
+export function removerPrenhez(prenhezId: string): Prenhez | null {
+  const registros = lerLista<Prenhez>(STORAGE_KEYS.prenhez);
+  const alvo = registros.find((item) => mesmoId(item.id, prenhezId)) ?? null;
+  if (!alvo) return null;
+
+  const filtrados = registros.filter((item) => !mesmoId(item.id, prenhezId));
+  salvarLista(STORAGE_KEYS.prenhez, filtrados);
+  return alvo;
+}
+
+export function criarDoenca(fazendaId: string, payload: DoencaPayload): Doenca | null {
+  const identificacaoAnimal = payload.identificacaoAnimal.trim();
+  const nomeDoenca = payload.nomeDoenca.trim();
+  if (!fazendaId || !identificacaoAnimal || !nomeDoenca || !payload.dataRegistro) return null;
+
+  const novo: Doenca = {
+    id: gerarId(),
+    fazendaId,
+    identificacaoAnimal,
+    nomeDoenca,
+    dataRegistro: payload.dataRegistro,
+    status: payload.status,
+    tratamento: payload.tratamento?.trim() || '',
+    observacoes: payload.observacoes?.trim() || '',
+    pastoId: payload.pastoId || null,
+    dataCriacao: new Date().toISOString()
+  };
+
+  const registros = lerLista<Doenca>(STORAGE_KEYS.doencas);
+  salvarLista(STORAGE_KEYS.doencas, [...registros, novo]);
+  return novo;
+}
+
+export function atualizarDoenca(doencaId: string, payload: DoencaPayload): Doenca | null {
+  const registros = lerLista<Doenca>(STORAGE_KEYS.doencas);
+  const indice = registros.findIndex((item) => mesmoId(item.id, doencaId));
+  if (indice < 0) return null;
+
+  const identificacaoAnimal = payload.identificacaoAnimal.trim();
+  const nomeDoenca = payload.nomeDoenca.trim();
+  if (!identificacaoAnimal || !nomeDoenca || !payload.dataRegistro) return null;
+
+  const atual: Doenca = {
+    ...registros[indice],
+    identificacaoAnimal,
+    nomeDoenca,
+    dataRegistro: payload.dataRegistro,
+    status: payload.status,
+    tratamento: payload.tratamento?.trim() || '',
+    observacoes: payload.observacoes?.trim() || '',
+    pastoId: payload.pastoId || null
+  };
+
+  const copia = [...registros];
+  copia[indice] = atual;
+  salvarLista(STORAGE_KEYS.doencas, copia);
+  return atual;
+}
+
+export function removerDoenca(doencaId: string): Doenca | null {
+  const registros = lerLista<Doenca>(STORAGE_KEYS.doencas);
+  const alvo = registros.find((item) => mesmoId(item.id, doencaId)) ?? null;
+  if (!alvo) return null;
+
+  const filtrados = registros.filter((item) => !mesmoId(item.id, doencaId));
+  salvarLista(STORAGE_KEYS.doencas, filtrados);
+  return alvo;
+}
+
+export function registrarHistorico(
+  fazendaId: string,
+  tipo: TipoHistorico,
+  descricao: string,
+  meta?: Historico['meta']
+): Historico | null {
+  if (!fazendaId || !descricao.trim()) return null;
+
+  const historico = lerLista<Historico>(STORAGE_KEYS.historico);
+  const novo: Historico = {
+    id: gerarId(),
+    fazendaId,
+    tipo,
+    descricao: descricao.trim(),
+    dataCriacao: new Date().toISOString(),
+    ...(meta ? { meta } : {})
+  };
+
+  salvarLista(STORAGE_KEYS.historico, [...historico, novo]);
+  return novo;
 }
 
 export function removerFazenda(fazendaId: string): void {

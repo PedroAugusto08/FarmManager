@@ -131,6 +131,16 @@ input {
   color: var(--ink-700);
 }
 
+.btn.tiny {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.btn.danger {
+  background: #f7dfdf;
+  color: var(--danger);
+}
+
 .summary-grid {
   margin-top: 1rem;
   display: grid;
@@ -190,6 +200,193 @@ input {
   gap: 0.65rem;
 }
 
+.history-toolbar {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.history-filter {
+  max-width: 240px;
+}
+
+.history-group {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.history-date {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--ink-500);
+  text-transform: capitalize;
+  font-family: 'Avenir Next', 'Trebuchet MS', sans-serif;
+}
+
+.history-group-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.history-item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  padding: 0.85rem;
+  cursor: pointer;
+  color: var(--ink-900);
+}
+
+.history-item:hover {
+  border-color: rgba(23, 77, 47, 0.38);
+  box-shadow: 0 4px 12px rgba(26, 35, 24, 0.09);
+}
+
+.history-item-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.history-item-description {
+  margin: 0;
+  color: var(--ink-700);
+}
+
+.history-item-time {
+  display: inline-block;
+  margin-top: 0.35rem;
+  color: var(--ink-500);
+  font-size: 0.82rem;
+  font-family: 'Avenir Next', 'Trebuchet MS', sans-serif;
+}
+
+.history-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 25, 16, 0.45);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  z-index: 40;
+}
+
+.history-modal {
+  width: min(900px, 100%);
+  max-height: 88vh;
+  overflow: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  background: #fffaf2;
+  box-shadow: var(--shadow);
+  padding: 1rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.history-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.history-modal-description {
+  margin: 0;
+  color: var(--ink-700);
+}
+
+.history-details-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.history-details-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.history-details-card h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ink-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: 'Avenir Next', 'Trebuchet MS', sans-serif;
+}
+
+.history-details-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  align-items: flex-start;
+  padding-top: 0.15rem;
+}
+
+.history-details-line span {
+  color: var(--ink-500);
+}
+
+.history-details-line strong {
+  color: var(--ink-900);
+  text-align: right;
+  font-weight: 600;
+}
+
+.history-details-info {
+  margin: 0;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  padding: 0.65rem;
+  background: rgba(244, 230, 205, 0.45);
+  color: var(--ink-700);
+}
+
+.pasto-toolbar {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.pasto-form {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: #f8f0e4;
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.form-grid {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.field.full {
+  grid-column: 1 / -1;
+}
+
+.inline-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.86rem;
+  font-family: 'Avenir Next', 'Trebuchet MS', sans-serif;
+}
+
+.hint-line {
+  margin: 0;
+  color: var(--ink-500);
+  font-size: 0.82rem;
+  font-family: 'Avenir Next', 'Trebuchet MS', sans-serif;
+}
+
 .item-card,
 .empty-panel {
   border: 1px solid var(--line);
@@ -203,6 +400,13 @@ input {
   justify-content: space-between;
   gap: 0.8rem;
   align-items: center;
+}
+
+.item-actions {
+  margin-top: 0.7rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 h2,
@@ -263,6 +467,14 @@ h3 {
   .summary-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .history-details-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 560px) {
@@ -276,5 +488,18 @@ h3 {
 
   .summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .history-item-main {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .history-details-grid {
+    grid-template-columns: 1fr;
   }
 }
