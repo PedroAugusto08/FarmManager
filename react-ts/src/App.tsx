@@ -1312,8 +1312,8 @@ function App() {
         <p className="kicker">Farm Manager · Migracao React + TypeScript</p>
         <h1>Painel de transicao</h1>
         <p className="lead">
-          Etapa 5 concluida: historico com filtro, agrupamento por data e detalhes Antes/Agora,
-          mantendo compatibilidade com os dados legados.
+          Etapa 6 concluida: PWA integrada com manifesto e service worker, mantendo compatibilidade
+          com os dados legados no localStorage.
         </p>
 
         <form className="farm-form" onSubmit={onCriarFazenda}>
