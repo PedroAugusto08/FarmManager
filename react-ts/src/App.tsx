@@ -1479,6 +1479,16 @@ function App() {
     setHistoricoSelecionadoId(null);
   }
 
+  function onAtalhoCard(
+    evento: React.KeyboardEvent<HTMLElement>,
+    acao: () => void
+  ) {
+    if (evento.key === 'Enter' || evento.key === ' ') {
+      evento.preventDefault();
+      acao();
+    }
+  }
+
   const exibirConteudo = Boolean(fazendaAtivaId);
 
   return (
@@ -1542,8 +1552,13 @@ function App() {
 
             <div className="farm-sheet-header">
               <h3 id="farm-modal-title">Gerenciar fazendas</h3>
-              <button className="btn tiny" type="button" onClick={fecharPainelFazendas}>
-                Fechar
+              <button
+                className="modal-close-btn"
+                type="button"
+                onClick={fecharPainelFazendas}
+                aria-label="Fechar modal"
+              >
+                ✕
               </button>
             </div>
 
@@ -1637,9 +1652,14 @@ function App() {
 
             return (
               <article
-                className="item-card list-enter-item"
+                className="item-card item-card-clickable list-enter-item"
                 style={criarEstiloEntrada(indice)}
                 key={pasto.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`Editar pasto ${pasto.nome}`}
+                onClick={() => abrirFormularioEditarPasto(pasto)}
+                onKeyDown={(evento) => onAtalhoCard(evento, () => abrirFormularioEditarPasto(pasto))}
               >
                 <header>
                   <h3>{pasto.nome}</h3>
@@ -1655,15 +1675,6 @@ function App() {
                 </p>
                 <p>Ultima atualizacao: {formatarData(pasto.dataAtualizacao || pasto.dataCriacao)}</p>
                 {pasto.observacoes && <p className="muted">{pasto.observacoes}</p>}
-
-                <div className="item-actions">
-                  <button className="btn tiny" type="button" onClick={() => abrirFormularioEditarPasto(pasto)}>
-                    Editar
-                  </button>
-                  <button className="btn tiny danger" type="button" onClick={() => onRemoverPasto(String(pasto.id))}>
-                    Remover
-                  </button>
-                </div>
               </article>
             );
           })}
@@ -1696,9 +1707,14 @@ function App() {
 
             return (
               <article
-                className="item-card list-enter-item"
+                className="item-card item-card-clickable list-enter-item"
                 style={criarEstiloEntrada(indice, 20)}
                 key={registro.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`Editar prenhez da vaca ${registro.identificacaoVaca}`}
+                onClick={() => abrirFormularioEditarPrenhez(registro)}
+                onKeyDown={(evento) => onAtalhoCard(evento, () => abrirFormularioEditarPrenhez(registro))}
               >
                 <header>
                   <h3>Vaca {registro.identificacaoVaca}</h3>
@@ -1711,19 +1727,6 @@ function App() {
                 <p>Previsao de parto: {formatarData(registro.dataPrevisaoParto)}</p>
                 {pasto && <p>Pasto: {pasto}</p>}
                 {registro.observacoes && <p className="muted">{registro.observacoes}</p>}
-
-                <div className="item-actions">
-                  <button className="btn tiny" type="button" onClick={() => abrirFormularioEditarPrenhez(registro)}>
-                    Editar
-                  </button>
-                  <button
-                    className="btn tiny danger"
-                    type="button"
-                    onClick={() => onRemoverPrenhez(String(registro.id))}
-                  >
-                    Remover
-                  </button>
-                </div>
               </article>
             );
           })}
@@ -1755,9 +1758,14 @@ function App() {
 
             return (
               <article
-                className="item-card list-enter-item"
+                className="item-card item-card-clickable list-enter-item"
                 style={criarEstiloEntrada(indice, 20)}
                 key={registro.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`Editar doenca ${registro.nomeDoenca} do animal ${registro.identificacaoAnimal}`}
+                onClick={() => abrirFormularioEditarDoenca(registro)}
+                onKeyDown={(evento) => onAtalhoCard(evento, () => abrirFormularioEditarDoenca(registro))}
               >
                 <header>
                   <h3>{registro.identificacaoAnimal}</h3>
@@ -1768,19 +1776,6 @@ function App() {
                 {pasto && <p>Pasto: {pasto}</p>}
                 {registro.tratamento && <p>Tratamento: {registro.tratamento}</p>}
                 {registro.observacoes && <p className="muted">{registro.observacoes}</p>}
-
-                <div className="item-actions">
-                  <button className="btn tiny" type="button" onClick={() => abrirFormularioEditarDoenca(registro)}>
-                    Editar
-                  </button>
-                  <button
-                    className="btn tiny danger"
-                    type="button"
-                    onClick={() => onRemoverDoenca(String(registro.id))}
-                  >
-                    Remover
-                  </button>
-                </div>
               </article>
             );
           })}
@@ -1870,8 +1865,13 @@ function App() {
 
             <div className="farm-sheet-header">
               <h3 id="pasto-sheet-title">{pastoForm.modo === 'novo' ? 'Novo pasto' : 'Editar pasto'}</h3>
-              <button className="btn tiny" type="button" onClick={fecharFormularioPasto}>
-                Fechar
+              <button
+                className="modal-close-btn"
+                type="button"
+                onClick={fecharFormularioPasto}
+                aria-label="Fechar modal"
+              >
+                ✕
               </button>
             </div>
 
@@ -1926,6 +1926,11 @@ function App() {
               {erroPasto && <p className="inline-error">{erroPasto}</p>}
 
               <div className="item-actions">
+                {pastoForm.modo === 'editar' && pastoForm.id && (
+                  <button className="btn danger" type="button" onClick={() => onRemoverPasto(String(pastoForm.id))}>
+                    Remover pasto
+                  </button>
+                )}
                 <button className="btn primary" type="submit">
                   {pastoForm.modo === 'novo' ? 'Salvar pasto' : 'Atualizar pasto'}
                 </button>
@@ -1959,8 +1964,13 @@ function App() {
 
             <div className="farm-sheet-header">
               <h3 id="prenhez-sheet-title">{prenhezForm.modo === 'novo' ? 'Nova prenhez' : 'Editar prenhez'}</h3>
-              <button className="btn tiny" type="button" onClick={fecharFormularioPrenhez}>
-                Fechar
+              <button
+                className="modal-close-btn"
+                type="button"
+                onClick={fecharFormularioPrenhez}
+                aria-label="Fechar modal"
+              >
+                ✕
               </button>
             </div>
 
@@ -2040,6 +2050,11 @@ function App() {
               {erroPrenhez && <p className="inline-error">{erroPrenhez}</p>}
 
               <div className="item-actions">
+                {prenhezForm.modo === 'editar' && prenhezForm.id && (
+                  <button className="btn danger" type="button" onClick={() => onRemoverPrenhez(String(prenhezForm.id))}>
+                    Remover registro
+                  </button>
+                )}
                 <button className="btn primary" type="submit">
                   {prenhezForm.modo === 'novo' ? 'Salvar registro' : 'Atualizar registro'}
                 </button>
@@ -2073,8 +2088,13 @@ function App() {
 
             <div className="farm-sheet-header">
               <h3 id="doenca-sheet-title">{doencaForm.modo === 'novo' ? 'Nova doenca' : 'Editar doenca'}</h3>
-              <button className="btn tiny" type="button" onClick={fecharFormularioDoenca}>
-                Fechar
+              <button
+                className="modal-close-btn"
+                type="button"
+                onClick={fecharFormularioDoenca}
+                aria-label="Fechar modal"
+              >
+                ✕
               </button>
             </div>
 
@@ -2168,6 +2188,11 @@ function App() {
               {erroDoenca && <p className="inline-error">{erroDoenca}</p>}
 
               <div className="item-actions">
+                {doencaForm.modo === 'editar' && doencaForm.id && (
+                  <button className="btn danger" type="button" onClick={() => onRemoverDoenca(String(doencaForm.id))}>
+                    Remover registro
+                  </button>
+                )}
                 <button className="btn primary" type="submit">
                   {doencaForm.modo === 'novo' ? 'Salvar registro' : 'Atualizar registro'}
                 </button>
@@ -2201,8 +2226,13 @@ function App() {
 
             <div className="history-modal-header">
               <h3 id="history-modal-title">Detalhes do historico</h3>
-              <button className="btn tiny" type="button" onClick={fecharDetalhesHistorico}>
-                Fechar
+              <button
+                className="modal-close-btn"
+                type="button"
+                onClick={fecharDetalhesHistorico}
+                aria-label="Fechar modal"
+              >
+                ✕
               </button>
             </div>
 

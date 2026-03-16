@@ -366,6 +366,30 @@ textarea:focus-visible {
   font-size: 0.8rem;
 }
 
+.modal-close-btn {
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--ink-700);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modal-close-btn:hover {
+  transform: none;
+  box-shadow: none;
+  background: transparent;
+  color: var(--ink-900);
+}
+
 .btn.danger {
   background: #f8e3e3;
   color: var(--danger);
@@ -630,6 +654,15 @@ textarea:focus-visible {
   transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 0.22s ease,
     border-color 0.22s ease;
+}
+
+.item-card-clickable {
+  cursor: pointer;
+}
+
+.item-card-clickable:focus-visible {
+  outline: 2px solid rgba(31, 79, 46, 0.75);
+  outline-offset: 2px;
 }
 
 .item-card:hover {
