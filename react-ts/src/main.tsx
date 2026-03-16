@@ -9,7 +9,7 @@ function registrarServiceWorker(): void {
 
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {
-      // Falha de registro nao deve impedir uso da aplicacao.
+      // Falha de registro não deve impedir uso da aplicação.
     })
   })
 }

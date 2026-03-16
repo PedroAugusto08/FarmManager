@@ -74,8 +74,8 @@ interface DoencaFormState {
 const ABAS: Array<{ id: Aba; label: string }> = [
   { id: 'pasto', label: 'Pastos' },
   { id: 'prenhez', label: 'Prenhez' },
-  { id: 'doenca', label: 'Doencas' },
-  { id: 'historico', label: 'Historico' }
+  { id: 'doenca', label: 'Doenças' },
+  { id: 'historico', label: 'Histórico' }
 ];
 
 const STATUS_DOENCA: Record<StatusDoenca, string> = {
@@ -88,7 +88,7 @@ const FILTROS_HISTORICO: Array<{ id: FiltroHistorico; label: string }> = [
   { id: 'todos', label: 'Todos' },
   { id: 'pasto', label: 'Pasto' },
   { id: 'prenhez', label: 'Prenhez' },
-  { id: 'doenca', label: 'Doenca' }
+  { id: 'doenca', label: 'Doença' }
 ];
 
 const SIMBOLO_ABA: Record<Aba, string> = {
@@ -195,7 +195,7 @@ function formatarDataHora(dataIso?: string): string {
 
 function formatarDataGrupo(dataIso: string): string {
   const data = new Date(dataIso);
-  if (Number.isNaN(data.getTime())) return 'Data invalida';
+  if (Number.isNaN(data.getTime())) return 'Data inválida';
 
   const hoje = new Date();
   const ontem = new Date(hoje);
@@ -282,7 +282,7 @@ function humanizarChave(chave: string): string {
 
 function formatarValorDetalhe(valor: unknown, chave: string): ValorDetalhe {
   if (valor === null || valor === undefined) return '--';
-  if (typeof valor === 'boolean') return valor ? 'Sim' : 'Nao';
+  if (typeof valor === 'boolean') return valor ? 'Sim' : 'Não';
 
   if (typeof valor === 'number') return Number.isFinite(valor) ? valor : '--';
 
@@ -430,7 +430,7 @@ function inferirAntesPastoPorHistorico(
     if (snapshot) return snapshot;
   }
 
-  return { Info: 'Nao foi possivel inferir o valor anterior a partir do historico.' };
+  return { Info: 'Não foi possível inferir o valor anterior a partir do histórico.' };
 }
 
 function obterDetalhesHistorico(
@@ -477,7 +477,7 @@ function obterDetalhesHistorico(
       };
     }
 
-    return { info: 'Este registro nao tem numeros associados para detalhar.' };
+    return { info: 'Este registro não tem números associados para detalhar.' };
   }
 
   return null;
@@ -648,7 +648,7 @@ function App() {
       try {
         window.localStorage.setItem(CHAVE_UI_CONTRASTE, 'high');
       } catch {
-        // Ignora falhas de persistencia para nao quebrar o fluxo da UI.
+        // Ignora falhas de persistência para não quebrar o fluxo da UI.
       }
       return;
     }
@@ -657,7 +657,7 @@ function App() {
     try {
       window.localStorage.setItem(CHAVE_UI_CONTRASTE, 'normal');
     } catch {
-      // Ignora falhas de persistencia para nao quebrar o fluxo da UI.
+      // Ignora falhas de persistência para não quebrar o fluxo da UI.
     }
   }, [altoContrasteAtivo]);
 
@@ -777,6 +777,31 @@ function App() {
     return filtrarDetalhesParaExibicao(detalhes, historicoSelecionado.tipo);
   }, [historicoSelecionado, historicoFiltrado, mapaPastos]);
 
+  const comparativoHistoricoSelecionado = useMemo(() => {
+    if (!detalhesHistoricoSelecionado) return [];
+
+    const antes = detalhesHistoricoSelecionado.antes ?? {};
+    const depois = detalhesHistoricoSelecionado.depois ?? {};
+    const temAntes = Boolean(detalhesHistoricoSelecionado.antes);
+    const temDepois = Boolean(detalhesHistoricoSelecionado.depois);
+    const chaves = new Set([...Object.keys(antes), ...Object.keys(depois)]);
+
+    return Array.from(chaves).map((chave) => {
+      const valorAntes = Object.prototype.hasOwnProperty.call(antes, chave) ? antes[chave] : '--';
+      const valorDepois = Object.prototype.hasOwnProperty.call(depois, chave) ? depois[chave] : '--';
+      const antesFormatado = String(valorAntes ?? '--');
+      const depoisFormatado = String(valorDepois ?? '--');
+      const mudou = temAntes && temDepois ? antesFormatado !== depoisFormatado : true;
+
+      return {
+        chave,
+        antes: antesFormatado,
+        depois: depoisFormatado,
+        mudou
+      };
+    });
+  }, [detalhesHistoricoSelecionado]);
+
   const prenhezPorPasto = useMemo(() => {
     const contagem = new Map<string, number>();
     prenhezFiltradas.forEach((registro) => {
@@ -824,7 +849,7 @@ function App() {
     mostrarToast(
       'info',
       proximo ? 'Alto contraste ativado' : 'Alto contraste desativado',
-      proximo ? 'Leitura otimizada para uso sob sol forte.' : 'Visual padrao restaurado.'
+      proximo ? 'Leitura otimizada para uso sob sol forte.' : 'Visual padrão restaurado.'
     );
   }
 
@@ -837,8 +862,8 @@ function App() {
     evento.preventDefault();
     const nova = criarFazenda(nomeFazendaNovaPainel);
     if (!nova) {
-      setErroPainelFazenda('Nao foi possivel criar a fazenda. Verifique o armazenamento do navegador.');
-      mostrarToast('error', 'Falha ao criar fazenda', 'Nao foi possivel salvar no navegador.');
+      setErroPainelFazenda('Não foi possível criar a fazenda. Verifique o armazenamento do navegador.');
+      mostrarToast('error', 'Falha ao criar fazenda', 'Não foi possível salvar no navegador.');
       return;
     }
 
@@ -868,8 +893,8 @@ function App() {
 
     const atualizada = atualizarFazenda(fazendaAtivaId, nomeFazendaEdicaoPainel);
     if (!atualizada) {
-      setErroPainelFazenda('Nao foi possivel atualizar o nome da fazenda.');
-      mostrarToast('error', 'Falha ao atualizar', 'Nao foi possivel atualizar o nome da fazenda.');
+      setErroPainelFazenda('Não foi possível atualizar o nome da fazenda.');
+      mostrarToast('error', 'Falha ao atualizar', 'Não foi possível atualizar o nome da fazenda.');
       return;
     }
 
@@ -901,7 +926,7 @@ function App() {
     setFiltroHistorico('todos');
     setHistoricoSelecionadoId(null);
     recarregar();
-    mostrarToast('success', 'Fazenda removida', `${fazendaAtiva.nome} foi removida da selecao.`);
+    mostrarToast('success', 'Fazenda removida', `${fazendaAtiva.nome} foi removida da seleção.`);
   }
 
   function abrirFormularioNovoPasto() {
@@ -953,15 +978,15 @@ function App() {
 
     if (!payload.nome.trim()) {
       setErroPasto('Informe o nome do pasto.');
-      mostrarToast('error', 'Nome obrigatorio', 'Informe o nome do pasto para continuar.');
+      mostrarToast('error', 'Nome obrigatório', 'Informe o nome do pasto para continuar.');
       return;
     }
 
     if (pastoForm.modo === 'novo') {
       const novo = criarPasto(fazendaAtivaId, payload);
       if (!novo) {
-        setErroPasto('Nao foi possivel salvar o pasto.');
-        mostrarToast('error', 'Falha ao salvar', 'Nao foi possivel salvar o pasto.');
+        setErroPasto('Não foi possível salvar o pasto.');
+        mostrarToast('error', 'Falha ao salvar', 'Não foi possível salvar o pasto.');
         return;
       }
 
@@ -988,15 +1013,15 @@ function App() {
     }
 
     if (!pastoForm.id) {
-      setErroPasto('Pasto invalido para edicao.');
-      mostrarToast('error', 'Pasto invalido', 'Nao foi possivel identificar o pasto para edicao.');
+      setErroPasto('Pasto inválido para edição.');
+      mostrarToast('error', 'Pasto inválido', 'Não foi possível identificar o pasto para edição.');
       return;
     }
 
     const pastoAtual = snapshot.pastos.find((item) => mesmoId(item.id, pastoForm.id));
     if (!pastoAtual) {
-      setErroPasto('Pasto nao encontrado.');
-      mostrarToast('error', 'Pasto nao encontrado', 'Atualize a tela e tente novamente.');
+      setErroPasto('Pasto não encontrado.');
+      mostrarToast('error', 'Pasto não encontrado', 'Atualize a tela e tente novamente.');
       return;
     }
 
@@ -1011,8 +1036,8 @@ function App() {
     );
 
     if (!atualizado) {
-      setErroPasto('Nao foi possivel atualizar o pasto.');
-      mostrarToast('error', 'Falha ao atualizar', 'Nao foi possivel atualizar o pasto.');
+      setErroPasto('Não foi possível atualizar o pasto.');
+      mostrarToast('error', 'Falha ao atualizar', 'Não foi possível atualizar o pasto.');
       return;
     }
 
@@ -1052,7 +1077,7 @@ function App() {
 
     const removido = removerPasto(pastoId);
     if (!removido) {
-      mostrarToast('error', 'Falha ao remover', 'Nao foi possivel remover o pasto.');
+      mostrarToast('error', 'Falha ao remover', 'Não foi possível remover o pasto.');
       return;
     }
 
@@ -1148,16 +1173,16 @@ function App() {
     };
 
     if (!payload.identificacaoVaca.trim()) {
-      setErroPrenhez('Informe a identificacao da vaca.');
-      mostrarToast('error', 'Vaca obrigatoria', 'Informe a identificacao da vaca.');
+      setErroPrenhez('Informe a identificação da vaca.');
+      mostrarToast('error', 'Vaca obrigatória', 'Informe a identificação da vaca.');
       return;
     }
 
     if (prenhezForm.modo === 'novo') {
       const novo = criarPrenhez(fazendaAtivaId, payload);
       if (!novo) {
-        setErroPrenhez('Nao foi possivel salvar o registro de prenhez.');
-        mostrarToast('error', 'Falha ao salvar', 'Nao foi possivel salvar o registro de prenhez.');
+        setErroPrenhez('Não foi possível salvar o registro de prenhez.');
+        mostrarToast('error', 'Falha ao salvar', 'Não foi possível salvar o registro de prenhez.');
         return;
       }
 
@@ -1180,22 +1205,22 @@ function App() {
     }
 
     if (!prenhezForm.id) {
-      setErroPrenhez('Registro de prenhez invalido para edicao.');
-      mostrarToast('error', 'Registro invalido', 'Nao foi possivel identificar o registro para edicao.');
+      setErroPrenhez('Registro de prenhez inválido para edição.');
+      mostrarToast('error', 'Registro inválido', 'Não foi possível identificar o registro para edição.');
       return;
     }
 
     const atual = snapshot.prenhezes.find((item) => mesmoId(item.id, prenhezForm.id));
     if (!atual) {
-      setErroPrenhez('Registro de prenhez nao encontrado.');
-      mostrarToast('error', 'Registro nao encontrado', 'Atualize a tela e tente novamente.');
+      setErroPrenhez('Registro de prenhez não encontrado.');
+      mostrarToast('error', 'Registro não encontrado', 'Atualize a tela e tente novamente.');
       return;
     }
 
     const atualizado = atualizarPrenhez(prenhezForm.id, payload);
     if (!atualizado) {
-      setErroPrenhez('Nao foi possivel atualizar o registro de prenhez.');
-      mostrarToast('error', 'Falha ao atualizar', 'Nao foi possivel atualizar o registro de prenhez.');
+      setErroPrenhez('Não foi possível atualizar o registro de prenhez.');
+      mostrarToast('error', 'Falha ao atualizar', 'Não foi possível atualizar o registro de prenhez.');
       return;
     }
 
@@ -1236,7 +1261,7 @@ function App() {
 
     const removido = removerPrenhez(prenhezId);
     if (!removido) {
-      mostrarToast('error', 'Falha ao remover', 'Nao foi possivel remover o registro de prenhez.');
+      mostrarToast('error', 'Falha ao remover', 'Não foi possível remover o registro de prenhez.');
       return;
     }
 
@@ -1308,8 +1333,8 @@ function App() {
     if (!doencaForm) return;
 
     if (!fazendaAtivaId) {
-      setErroDoenca('Selecione uma fazenda antes de salvar uma doenca.');
-      mostrarToast('error', 'Sem fazenda ativa', 'Selecione uma fazenda antes de salvar uma doenca.');
+      setErroDoenca('Selecione uma fazenda antes de salvar uma doença.');
+      mostrarToast('error', 'Sem fazenda ativa', 'Selecione uma fazenda antes de salvar uma doença.');
       return;
     }
 
@@ -1324,35 +1349,35 @@ function App() {
     };
 
     if (!payload.identificacaoAnimal.trim()) {
-      setErroDoenca('Informe a identificacao do animal.');
-      mostrarToast('error', 'Animal obrigatorio', 'Informe a identificacao do animal.');
+      setErroDoenca('Informe a identificação do animal.');
+      mostrarToast('error', 'Animal obrigatório', 'Informe a identificação do animal.');
       return;
     }
 
     if (!payload.nomeDoenca.trim()) {
-      setErroDoenca('Informe o nome da doenca.');
-      mostrarToast('error', 'Doenca obrigatoria', 'Informe o nome da doenca.');
+      setErroDoenca('Informe o nome da doença.');
+      mostrarToast('error', 'Doença obrigatória', 'Informe o nome da doença.');
       return;
     }
 
     if (!payload.dataRegistro) {
       setErroDoenca('Informe a data do registro.');
-      mostrarToast('error', 'Data obrigatoria', 'Informe a data do registro da doenca.');
+      mostrarToast('error', 'Data obrigatória', 'Informe a data do registro da doença.');
       return;
     }
 
     if (doencaForm.modo === 'novo') {
       const nova = criarDoenca(fazendaAtivaId, payload);
       if (!nova) {
-        setErroDoenca('Nao foi possivel salvar o registro de doenca.');
-        mostrarToast('error', 'Falha ao salvar', 'Nao foi possivel salvar o registro de doenca.');
+        setErroDoenca('Não foi possível salvar o registro de doença.');
+        mostrarToast('error', 'Falha ao salvar', 'Não foi possível salvar o registro de doença.');
         return;
       }
 
       registrarHistorico(
         fazendaAtivaId,
         'doenca',
-        `Doenca registrada - Animal: ${nova.identificacaoAnimal} - ${nova.nomeDoenca}`,
+        `Doença registrada - Animal: ${nova.identificacaoAnimal} - ${nova.nomeDoenca}`,
         {
           acao: 'cadastrar',
           doencaId: nova.id,
@@ -1370,34 +1395,34 @@ function App() {
 
       recarregar();
       fecharFormularioDoenca();
-      mostrarToast('success', 'Doenca registrada', `${nova.nomeDoenca} registrada para ${nova.identificacaoAnimal}.`);
+      mostrarToast('success', 'Doença registrada', `${nova.nomeDoenca} registrada para ${nova.identificacaoAnimal}.`);
       return;
     }
 
     if (!doencaForm.id) {
-      setErroDoenca('Registro de doenca invalido para edicao.');
-      mostrarToast('error', 'Registro invalido', 'Nao foi possivel identificar o registro para edicao.');
+      setErroDoenca('Registro de doença inválido para edição.');
+      mostrarToast('error', 'Registro inválido', 'Não foi possível identificar o registro para edição.');
       return;
     }
 
     const atual = snapshot.doencas.find((item) => mesmoId(item.id, doencaForm.id));
     if (!atual) {
-      setErroDoenca('Registro de doenca nao encontrado.');
-      mostrarToast('error', 'Registro nao encontrado', 'Atualize a tela e tente novamente.');
+      setErroDoenca('Registro de doença não encontrado.');
+      mostrarToast('error', 'Registro não encontrado', 'Atualize a tela e tente novamente.');
       return;
     }
 
     const atualizada = atualizarDoenca(doencaForm.id, payload);
     if (!atualizada) {
-      setErroDoenca('Nao foi possivel atualizar o registro de doenca.');
-      mostrarToast('error', 'Falha ao atualizar', 'Nao foi possivel atualizar o registro de doenca.');
+      setErroDoenca('Não foi possível atualizar o registro de doença.');
+      mostrarToast('error', 'Falha ao atualizar', 'Não foi possível atualizar o registro de doença.');
       return;
     }
 
     registrarHistorico(
       fazendaAtivaId,
       'doenca',
-      `Doenca atualizada - Animal: ${atualizada.identificacaoAnimal} - ${atualizada.nomeDoenca}`,
+      `Doença atualizada - Animal: ${atualizada.identificacaoAnimal} - ${atualizada.nomeDoenca}`,
       {
         acao: 'atualizar',
         doencaId: atualizada.id,
@@ -1424,7 +1449,7 @@ function App() {
 
     recarregar();
     fecharFormularioDoenca();
-    mostrarToast('success', 'Doenca atualizada', `${atualizada.nomeDoenca} foi atualizada.`);
+    mostrarToast('success', 'Doença atualizada', `${atualizada.nomeDoenca} foi atualizada.`);
   }
 
   function onRemoverDoenca(doencaId: string) {
@@ -1438,7 +1463,7 @@ function App() {
 
     const removida = removerDoenca(doencaId);
     if (!removida) {
-      mostrarToast('error', 'Falha ao remover', 'Nao foi possivel remover o registro de doenca.');
+      mostrarToast('error', 'Falha ao remover', 'Não foi possível remover o registro de doença.');
       return;
     }
 
@@ -1446,7 +1471,7 @@ function App() {
       registrarHistorico(
         fazendaAtivaId,
         'doenca',
-        `Doenca removida - Animal: ${removida.identificacaoAnimal} - ${removida.nomeDoenca}`,
+        `Doença removida - Animal: ${removida.identificacaoAnimal} - ${removida.nomeDoenca}`,
         {
           acao: 'remover',
           doencaId: removida.id,
@@ -1468,7 +1493,7 @@ function App() {
     }
 
     recarregar();
-    mostrarToast('success', 'Doenca removida', `${removida.nomeDoenca} foi removida.`);
+    mostrarToast('success', 'Doença removida', `${removida.nomeDoenca} foi removida.`);
   }
 
   function abrirDetalhesHistorico(registroId: string) {
@@ -1604,7 +1629,7 @@ function App() {
         </div>
       )}
 
-      <nav className="tabs" aria-label="Navegacao de modulos">
+      <nav className="tabs" aria-label="Navegação de módulos">
         {ABAS.map((aba) => (
           <button
             key={aba.id}
@@ -1621,7 +1646,7 @@ function App() {
       {!exibirConteudo && (
         <section className="empty-panel">
           <h2>Nenhuma fazenda selecionada</h2>
-          <p>Selecione uma fazenda existente ou crie uma nova para iniciar a migracao.</p>
+          <p>Selecione uma fazenda existente ou crie uma nova para iniciar a migração.</p>
         </section>
       )}
 
@@ -1641,7 +1666,7 @@ function App() {
           {pastosFiltrados.length === 0 && (
             <div className="empty-panel">
               <h2>Sem pastos cadastrados</h2>
-              <p>Use o botao acima para criar o primeiro pasto desta fazenda.</p>
+              <p>Use o botão acima para criar o primeiro pasto desta fazenda.</p>
             </div>
           )}
 
@@ -1671,9 +1696,9 @@ function App() {
                 </p>
                 <p>
                   Registros vinculados: <strong>{qtdPrenhez}</strong> prenhez · <strong>{qtdDoenca}</strong>{' '}
-                  doencas
+                  doenças
                 </p>
-                <p>Ultima atualizacao: {formatarData(pasto.dataAtualizacao || pasto.dataCriacao)}</p>
+                <p>Última atualização: {formatarData(pasto.dataAtualizacao || pasto.dataCriacao)}</p>
                 {pasto.observacoes && <p className="muted">{pasto.observacoes}</p>}
               </article>
             );
@@ -1697,7 +1722,7 @@ function App() {
           {prenhezOrdenadas.length === 0 && (
             <div className="empty-panel">
               <h2>Sem registros de prenhez</h2>
-              <p>Use o botao acima para registrar a primeira prenhez desta fazenda.</p>
+              <p>Use o botão acima para registrar a primeira prenhez desta fazenda.</p>
             </div>
           )}
 
@@ -1719,12 +1744,12 @@ function App() {
                 <header>
                   <h3>Vaca {registro.identificacaoVaca}</h3>
                   <span className={dias !== null && dias <= 30 ? 'chip warning' : 'chip'}>
-                    {dias === null ? 'Sem previsao' : dias >= 0 ? `${dias} dias` : 'Parto vencido'}
+                    {dias === null ? 'Sem previsão' : dias >= 0 ? `${dias} dias` : 'Parto vencido'}
                   </span>
                 </header>
-                <p>Touro: {registro.identificacaoTouro || 'Nao informado'}</p>
+                <p>Touro: {registro.identificacaoTouro || 'Não informado'}</p>
                 <p>Cobertura: {formatarData(registro.dataCobertura)}</p>
-                <p>Previsao de parto: {formatarData(registro.dataPrevisaoParto)}</p>
+                <p>Previsão de parto: {formatarData(registro.dataPrevisaoParto)}</p>
                 {pasto && <p>Pasto: {pasto}</p>}
                 {registro.observacoes && <p className="muted">{registro.observacoes}</p>}
               </article>
@@ -1734,22 +1759,22 @@ function App() {
       )}
 
       {exibirConteudo && abaAtiva === 'doenca' && (
-        <section className="panel-list module-panel module-doenca" aria-label="Lista de doencas">
+        <section className="panel-list module-panel module-doenca" aria-label="Lista de doenças">
           <div className="section-heading">
-            <h2>Saude do rebanho</h2>
+            <h2>Saúde do rebanho</h2>
           </div>
 
           <div className="pasto-toolbar">
             <button className="btn primary" type="button" onClick={abrirFormularioNovaDoenca}>
-              + Registrar doenca
+              + Registrar doença
             </button>
           </div>
 
 
           {doencasOrdenadas.length === 0 && (
             <div className="empty-panel">
-              <h2>Sem registros de doencas</h2>
-              <p>Use o botao acima para registrar a primeira doenca desta fazenda.</p>
+              <h2>Sem registros de doenças</h2>
+              <p>Use o botão acima para registrar a primeira doença desta fazenda.</p>
             </div>
           )}
 
@@ -1763,7 +1788,7 @@ function App() {
                 key={registro.id}
                 role="button"
                 tabIndex={0}
-                aria-label={`Editar doenca ${registro.nomeDoenca} do animal ${registro.identificacaoAnimal}`}
+                aria-label={`Editar doença ${registro.nomeDoenca} do animal ${registro.identificacaoAnimal}`}
                 onClick={() => abrirFormularioEditarDoenca(registro)}
                 onKeyDown={(evento) => onAtalhoCard(evento, () => abrirFormularioEditarDoenca(registro))}
               >
@@ -1771,7 +1796,7 @@ function App() {
                   <h3>{registro.identificacaoAnimal}</h3>
                   <span className={`chip status-${registro.status}`}>{STATUS_DOENCA[registro.status]}</span>
                 </header>
-                <p>Doenca: {registro.nomeDoenca}</p>
+                <p>Doença: {registro.nomeDoenca}</p>
                 <p>Data: {formatarData(registro.dataRegistro)}</p>
                 {pasto && <p>Pasto: {pasto}</p>}
                 {registro.tratamento && <p>Tratamento: {registro.tratamento}</p>}
@@ -1783,9 +1808,9 @@ function App() {
       )}
 
       {exibirConteudo && abaAtiva === 'historico' && (
-        <section className="panel-list module-panel module-historico" aria-label="Lista de historico">
+        <section className="panel-list module-panel module-historico" aria-label="Lista de histórico">
           <div className="section-heading">
-            <h2>Historico geral</h2>
+            <h2>Histórico geral</h2>
           </div>
 
           <div className="history-toolbar">
@@ -1806,8 +1831,8 @@ function App() {
 
           {historicoOrdenado.length === 0 && (
             <div className="empty-panel">
-              <h2>Sem historico nesta fazenda</h2>
-              <p>As acoes salvas pelos modulos legados e migrados ficam concentradas nesta visao.</p>
+              <h2>Sem histórico nesta fazenda</h2>
+              <p>As ações salvas pelos módulos legados e migrados ficam concentradas nesta visão.</p>
             </div>
           )}
 
@@ -1864,68 +1889,81 @@ function App() {
             <div className="farm-sheet-handle" aria-hidden="true" />
 
             <div className="farm-sheet-header">
-              <h3 id="pasto-sheet-title">{pastoForm.modo === 'novo' ? 'Novo pasto' : 'Editar pasto'}</h3>
-              <button
-                className="modal-close-btn"
-                type="button"
-                onClick={fecharFormularioPasto}
-                aria-label="Fechar modal"
-              >
-                ✕
-              </button>
+              <div className="sheet-header-copy">
+                <p className="sheet-header-kicker">Pastos</p>
+                <h3 id="pasto-sheet-title">{pastoForm.modo === 'novo' ? 'Novo pasto' : 'Editar pasto'}</h3>
+              </div>
+              <div className="sheet-header-actions">
+                <span className={`sheet-mode-pill ${pastoForm.modo === 'novo' ? 'is-new' : 'is-edit'}`}>
+                  {pastoForm.modo === 'novo' ? 'Novo' : 'Edição'}
+                </span>
+                <button
+                  className="modal-close-btn"
+                  type="button"
+                  onClick={fecharFormularioPasto}
+                  aria-label="Fechar modal"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
             <form className="pasto-form sheet-form" onSubmit={onSalvarPasto}>
-              <div className="form-grid">
-                <label className="field">
-                  Nome do pasto
-                  <input
-                    type="text"
-                    value={pastoForm.nome}
-                    onChange={(evento) => atualizarCampoPasto('nome', evento.target.value)}
-                    placeholder="Ex: Invernada 1"
-                    maxLength={80}
-                    required
-                  />
-                </label>
+              <div className="sheet-form-body">
+                <div className="form-grid">
+                  <label className="field">
+                    Nome do pasto
+                    <input
+                      type="text"
+                      value={pastoForm.nome}
+                      onChange={(evento) => atualizarCampoPasto('nome', evento.target.value)}
+                      placeholder="Ex: Invernada 1"
+                      maxLength={80}
+                      required
+                    />
+                  </label>
 
-                <label className="field">
-                  Animais grandes
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={pastoForm.animaisGrandes}
-                    onChange={(evento) => atualizarCampoPasto('animaisGrandes', evento.target.value)}
-                  />
-                </label>
+                  <label className="field">
+                    Animais grandes
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={pastoForm.animaisGrandes}
+                      onChange={(evento) => atualizarCampoPasto('animaisGrandes', evento.target.value)}
+                    />
+                  </label>
 
-                <label className="field">
-                  Animais pequenos
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={pastoForm.animaisPequenos}
-                    onChange={(evento) => atualizarCampoPasto('animaisPequenos', evento.target.value)}
-                  />
-                </label>
+                  <label className="field">
+                    Animais pequenos
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={pastoForm.animaisPequenos}
+                      onChange={(evento) => atualizarCampoPasto('animaisPequenos', evento.target.value)}
+                    />
+                  </label>
 
-                <label className="field full">
-                  Observacoes
-                  <input
-                    type="text"
-                    value={pastoForm.observacoes}
-                    onChange={(evento) => atualizarCampoPasto('observacoes', evento.target.value)}
-                    placeholder="Anotacoes sobre o pasto"
-                    maxLength={220}
-                  />
-                </label>
+                  <label className="field full">
+                    Observações
+                    <input
+                      type="text"
+                      value={pastoForm.observacoes}
+                      onChange={(evento) => atualizarCampoPasto('observacoes', evento.target.value)}
+                      placeholder="Anotações sobre o pasto"
+                      maxLength={220}
+                    />
+                  </label>
+                </div>
+
+                {erroPasto && <p className="inline-error">{erroPasto}</p>}
               </div>
 
-              {erroPasto && <p className="inline-error">{erroPasto}</p>}
-
-              <div className="item-actions">
+              <div className="item-actions sheet-footer-actions">
+                <button className="btn ghost" type="button" onClick={fecharFormularioPasto}>
+                  Cancelar
+                </button>
                 {pastoForm.modo === 'editar' && pastoForm.id && (
                   <button className="btn danger" type="button" onClick={() => onRemoverPasto(String(pastoForm.id))}>
                     Remover pasto
@@ -1933,9 +1971,6 @@ function App() {
                 )}
                 <button className="btn primary" type="submit">
                   {pastoForm.modo === 'novo' ? 'Salvar pasto' : 'Atualizar pasto'}
-                </button>
-                <button className="btn ghost" type="button" onClick={fecharFormularioPasto}>
-                  Cancelar
                 </button>
               </div>
             </form>
@@ -1963,93 +1998,108 @@ function App() {
             <div className="farm-sheet-handle" aria-hidden="true" />
 
             <div className="farm-sheet-header">
-              <h3 id="prenhez-sheet-title">{prenhezForm.modo === 'novo' ? 'Nova prenhez' : 'Editar prenhez'}</h3>
-              <button
-                className="modal-close-btn"
-                type="button"
-                onClick={fecharFormularioPrenhez}
-                aria-label="Fechar modal"
-              >
-                ✕
-              </button>
+              <div className="sheet-header-copy">
+                <p className="sheet-header-kicker">Prenhez</p>
+                <h3 id="prenhez-sheet-title">
+                  {prenhezForm.modo === 'novo' ? 'Nova prenhez' : 'Editar prenhez'}
+                </h3>
+              </div>
+              <div className="sheet-header-actions">
+                <span className={`sheet-mode-pill ${prenhezForm.modo === 'novo' ? 'is-new' : 'is-edit'}`}>
+                  {prenhezForm.modo === 'novo' ? 'Novo' : 'Edição'}
+                </span>
+                <button
+                  className="modal-close-btn"
+                  type="button"
+                  onClick={fecharFormularioPrenhez}
+                  aria-label="Fechar modal"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
             <form className="pasto-form sheet-form" onSubmit={onSalvarPrenhez}>
-              <div className="form-grid">
-                <label className="field">
-                  Identificacao da vaca
-                  <input
-                    type="text"
-                    value={prenhezForm.identificacaoVaca}
-                    onChange={(evento) => atualizarCampoPrenhez('identificacaoVaca', evento.target.value)}
-                    placeholder="Ex: Brinco 123"
-                    maxLength={120}
-                    required
-                  />
-                </label>
+              <div className="sheet-form-body">
+                <div className="form-grid">
+                  <label className="field">
+                    Identificação da vaca
+                    <input
+                      type="text"
+                      value={prenhezForm.identificacaoVaca}
+                      onChange={(evento) => atualizarCampoPrenhez('identificacaoVaca', evento.target.value)}
+                      placeholder="Ex: Brinco 123"
+                      maxLength={120}
+                      required
+                    />
+                  </label>
 
-                <label className="field">
-                  Identificacao do touro
-                  <input
-                    type="text"
-                    value={prenhezForm.identificacaoTouro}
-                    onChange={(evento) => atualizarCampoPrenhez('identificacaoTouro', evento.target.value)}
-                    placeholder="Ex: Touro 456"
-                    maxLength={120}
-                  />
-                </label>
+                  <label className="field">
+                    Identificação do touro
+                    <input
+                      type="text"
+                      value={prenhezForm.identificacaoTouro}
+                      onChange={(evento) => atualizarCampoPrenhez('identificacaoTouro', evento.target.value)}
+                      placeholder="Ex: Touro 456"
+                      maxLength={120}
+                    />
+                  </label>
 
-                <label className="field">
-                  Pasto
-                  <select
-                    value={prenhezForm.pastoId}
-                    onChange={(evento) => atualizarCampoPrenhez('pastoId', evento.target.value)}
-                    disabled={pastosFiltrados.length === 0}
-                  >
-                    <option value="">Selecione um pasto</option>
-                    {pastosFiltrados.map((pasto) => (
-                      <option key={pasto.id} value={String(pasto.id)}>
-                        {pasto.nome}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                  <label className="field">
+                    Pasto
+                    <select
+                      value={prenhezForm.pastoId}
+                      onChange={(evento) => atualizarCampoPrenhez('pastoId', evento.target.value)}
+                      disabled={pastosFiltrados.length === 0}
+                    >
+                      <option value="">Selecione um pasto</option>
+                      {pastosFiltrados.map((pasto) => (
+                        <option key={pasto.id} value={String(pasto.id)}>
+                          {pasto.nome}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-                <label className="field">
-                  Data da cobertura
-                  <input
-                    type="date"
-                    value={prenhezForm.dataCobertura}
-                    onChange={(evento) => atualizarCampoPrenhez('dataCobertura', evento.target.value)}
-                  />
-                </label>
+                  <label className="field">
+                    Data da cobertura
+                    <input
+                      type="date"
+                      value={prenhezForm.dataCobertura}
+                      onChange={(evento) => atualizarCampoPrenhez('dataCobertura', evento.target.value)}
+                    />
+                  </label>
 
-                <label className="field">
-                  Previsao de parto
-                  <input
-                    type="date"
-                    value={prenhezForm.dataPrevisaoParto}
-                    onChange={(evento) => atualizarCampoPrenhez('dataPrevisaoParto', evento.target.value)}
-                  />
-                </label>
+                  <label className="field">
+                    Previsão de parto
+                    <input
+                      type="date"
+                      value={prenhezForm.dataPrevisaoParto}
+                      onChange={(evento) => atualizarCampoPrenhez('dataPrevisaoParto', evento.target.value)}
+                    />
+                  </label>
 
-                <label className="field full">
-                  Observacoes
-                  <input
-                    type="text"
-                    value={prenhezForm.observacoes}
-                    onChange={(evento) => atualizarCampoPrenhez('observacoes', evento.target.value)}
-                    placeholder="Anotacoes sobre a prenhez"
-                    maxLength={220}
-                  />
-                </label>
+                  <label className="field full">
+                    Observações
+                    <input
+                      type="text"
+                      value={prenhezForm.observacoes}
+                      onChange={(evento) => atualizarCampoPrenhez('observacoes', evento.target.value)}
+                      placeholder="Anotações sobre a prenhez"
+                      maxLength={220}
+                    />
+                  </label>
+                </div>
+
+                <p className="hint-line">Gestação média: 283 dias (9 meses e 10 dias).</p>
+
+                {erroPrenhez && <p className="inline-error">{erroPrenhez}</p>}
               </div>
 
-              <p className="hint-line">Gestacao media: 283 dias (9 meses e 10 dias).</p>
-
-              {erroPrenhez && <p className="inline-error">{erroPrenhez}</p>}
-
-              <div className="item-actions">
+              <div className="item-actions sheet-footer-actions">
+                <button className="btn ghost" type="button" onClick={fecharFormularioPrenhez}>
+                  Cancelar
+                </button>
                 {prenhezForm.modo === 'editar' && prenhezForm.id && (
                   <button className="btn danger" type="button" onClick={() => onRemoverPrenhez(String(prenhezForm.id))}>
                     Remover registro
@@ -2057,9 +2107,6 @@ function App() {
                 )}
                 <button className="btn primary" type="submit">
                   {prenhezForm.modo === 'novo' ? 'Salvar registro' : 'Atualizar registro'}
-                </button>
-                <button className="btn ghost" type="button" onClick={fecharFormularioPrenhez}>
-                  Cancelar
                 </button>
               </div>
             </form>
@@ -2087,107 +2134,120 @@ function App() {
             <div className="farm-sheet-handle" aria-hidden="true" />
 
             <div className="farm-sheet-header">
-              <h3 id="doenca-sheet-title">{doencaForm.modo === 'novo' ? 'Nova doenca' : 'Editar doenca'}</h3>
-              <button
-                className="modal-close-btn"
-                type="button"
-                onClick={fecharFormularioDoenca}
-                aria-label="Fechar modal"
-              >
-                ✕
-              </button>
+              <div className="sheet-header-copy">
+                <p className="sheet-header-kicker">Doenças</p>
+                <h3 id="doenca-sheet-title">{doencaForm.modo === 'novo' ? 'Nova doença' : 'Editar doença'}</h3>
+              </div>
+              <div className="sheet-header-actions">
+                <span className={`sheet-mode-pill ${doencaForm.modo === 'novo' ? 'is-new' : 'is-edit'}`}>
+                  {doencaForm.modo === 'novo' ? 'Novo' : 'Edição'}
+                </span>
+                <button
+                  className="modal-close-btn"
+                  type="button"
+                  onClick={fecharFormularioDoenca}
+                  aria-label="Fechar modal"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
             <form className="pasto-form sheet-form" onSubmit={onSalvarDoenca}>
-              <div className="form-grid">
-                <label className="field">
-                  Identificacao do animal
-                  <input
-                    type="text"
-                    value={doencaForm.identificacaoAnimal}
-                    onChange={(evento) => atualizarCampoDoenca('identificacaoAnimal', evento.target.value)}
-                    placeholder="Ex: Brinco 123"
-                    maxLength={120}
-                    required
-                  />
-                </label>
+              <div className="sheet-form-body">
+                <div className="form-grid">
+                  <label className="field">
+                    Identificação do animal
+                    <input
+                      type="text"
+                      value={doencaForm.identificacaoAnimal}
+                      onChange={(evento) => atualizarCampoDoenca('identificacaoAnimal', evento.target.value)}
+                      placeholder="Ex: Brinco 123"
+                      maxLength={120}
+                      required
+                    />
+                  </label>
 
-                <label className="field">
-                  Nome da doenca
-                  <input
-                    type="text"
-                    value={doencaForm.nomeDoenca}
-                    onChange={(evento) => atualizarCampoDoenca('nomeDoenca', evento.target.value)}
-                    placeholder="Ex: Mastite"
-                    maxLength={120}
-                    required
-                  />
-                </label>
+                  <label className="field">
+                    Nome da doença
+                    <input
+                      type="text"
+                      value={doencaForm.nomeDoenca}
+                      onChange={(evento) => atualizarCampoDoenca('nomeDoenca', evento.target.value)}
+                      placeholder="Ex: Mastite"
+                      maxLength={120}
+                      required
+                    />
+                  </label>
 
-                <label className="field">
-                  Data do registro
-                  <input
-                    type="date"
-                    value={doencaForm.dataRegistro}
-                    onChange={(evento) => atualizarCampoDoenca('dataRegistro', evento.target.value)}
-                    required
-                  />
-                </label>
+                  <label className="field">
+                    Data do registro
+                    <input
+                      type="date"
+                      value={doencaForm.dataRegistro}
+                      onChange={(evento) => atualizarCampoDoenca('dataRegistro', evento.target.value)}
+                      required
+                    />
+                  </label>
 
-                <label className="field">
-                  Status
-                  <select
-                    value={doencaForm.status}
-                    onChange={(evento) => atualizarCampoDoenca('status', evento.target.value)}
-                  >
-                    <option value="ativo">Ativo</option>
-                    <option value="tratamento">Em tratamento</option>
-                    <option value="curado">Curado</option>
-                  </select>
-                </label>
+                  <label className="field">
+                    Status
+                    <select
+                      value={doencaForm.status}
+                      onChange={(evento) => atualizarCampoDoenca('status', evento.target.value)}
+                    >
+                      <option value="ativo">Ativo</option>
+                      <option value="tratamento">Em tratamento</option>
+                      <option value="curado">Curado</option>
+                    </select>
+                  </label>
 
-                <label className="field">
-                  Pasto
-                  <select
-                    value={doencaForm.pastoId}
-                    onChange={(evento) => atualizarCampoDoenca('pastoId', evento.target.value)}
-                    disabled={pastosFiltrados.length === 0}
-                  >
-                    <option value="">Selecione um pasto</option>
-                    {pastosFiltrados.map((pasto) => (
-                      <option key={pasto.id} value={String(pasto.id)}>
-                        {pasto.nome}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                  <label className="field">
+                    Pasto
+                    <select
+                      value={doencaForm.pastoId}
+                      onChange={(evento) => atualizarCampoDoenca('pastoId', evento.target.value)}
+                      disabled={pastosFiltrados.length === 0}
+                    >
+                      <option value="">Selecione um pasto</option>
+                      {pastosFiltrados.map((pasto) => (
+                        <option key={pasto.id} value={String(pasto.id)}>
+                          {pasto.nome}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-                <label className="field">
-                  Tratamento
-                  <input
-                    type="text"
-                    value={doencaForm.tratamento}
-                    onChange={(evento) => atualizarCampoDoenca('tratamento', evento.target.value)}
-                    placeholder="Ex: Antibiotico"
-                    maxLength={160}
-                  />
-                </label>
+                  <label className="field">
+                    Tratamento
+                    <input
+                      type="text"
+                      value={doencaForm.tratamento}
+                      onChange={(evento) => atualizarCampoDoenca('tratamento', evento.target.value)}
+                      placeholder="Ex: Antibiótico"
+                      maxLength={160}
+                    />
+                  </label>
 
-                <label className="field full">
-                  Observacoes
-                  <input
-                    type="text"
-                    value={doencaForm.observacoes}
-                    onChange={(evento) => atualizarCampoDoenca('observacoes', evento.target.value)}
-                    placeholder="Sintomas, evolucao e anotacoes"
-                    maxLength={220}
-                  />
-                </label>
+                  <label className="field full">
+                    Observações
+                    <input
+                      type="text"
+                      value={doencaForm.observacoes}
+                      onChange={(evento) => atualizarCampoDoenca('observacoes', evento.target.value)}
+                      placeholder="Sintomas, evolução e anotações"
+                      maxLength={220}
+                    />
+                  </label>
+                </div>
+
+                {erroDoenca && <p className="inline-error">{erroDoenca}</p>}
               </div>
 
-              {erroDoenca && <p className="inline-error">{erroDoenca}</p>}
-
-              <div className="item-actions">
+              <div className="item-actions sheet-footer-actions">
+                <button className="btn ghost" type="button" onClick={fecharFormularioDoenca}>
+                  Cancelar
+                </button>
                 {doencaForm.modo === 'editar' && doencaForm.id && (
                   <button className="btn danger" type="button" onClick={() => onRemoverDoenca(String(doencaForm.id))}>
                     Remover registro
@@ -2195,9 +2255,6 @@ function App() {
                 )}
                 <button className="btn primary" type="submit">
                   {doencaForm.modo === 'novo' ? 'Salvar registro' : 'Atualizar registro'}
-                </button>
-                <button className="btn ghost" type="button" onClick={fecharFormularioDoenca}>
-                  Cancelar
                 </button>
               </div>
             </form>
@@ -2225,7 +2282,10 @@ function App() {
             <div className="farm-sheet-handle" aria-hidden="true" />
 
             <div className="history-modal-header">
-              <h3 id="history-modal-title">Detalhes do historico</h3>
+              <div className="history-modal-head-copy">
+                <p className="sheet-header-kicker">Linha do tempo</p>
+                <h3 id="history-modal-title">Detalhes do histórico</h3>
+              </div>
               <button
                 className="modal-close-btn"
                 type="button"
@@ -2236,10 +2296,17 @@ function App() {
               </button>
             </div>
 
+            <div className="history-modal-topline">
+              <span className="chip history-type-chip">
+                {formatarTipoHistorico(historicoSelecionado) || 'Histórico'}
+              </span>
+              <span className="history-modal-time">{formatarDataHora(historicoSelecionado.dataCriacao)}</span>
+            </div>
+
             <p className="history-modal-description">{historicoSelecionado.descricao}</p>
 
-            <div className="history-details-grid">
-              <article className="history-details-card">
+            <div className="history-details-grid history-details-grid-summary">
+              <article className="history-details-card history-summary-card">
                 <h4>Resumo</h4>
                 <div className="history-details-line">
                   <span>Tipo</span>
@@ -2251,30 +2318,42 @@ function App() {
                 </div>
               </article>
 
-              {detalhesHistoricoSelecionado?.antes && (
-                <article className="history-details-card">
-                  <h4>Antes</h4>
-                  {Object.entries(detalhesHistoricoSelecionado.antes).map(([chave, valor]) => (
-                    <div className="history-details-line" key={`antes-${chave}`}>
-                      <span>{chave}</span>
-                      <strong>{String(valor)}</strong>
-                    </div>
-                  ))}
-                </article>
-              )}
-
-              {detalhesHistoricoSelecionado?.depois && (
-                <article className="history-details-card">
-                  <h4>Agora</h4>
-                  {Object.entries(detalhesHistoricoSelecionado.depois).map(([chave, valor]) => (
-                    <div className="history-details-line" key={`depois-${chave}`}>
-                      <span>{chave}</span>
-                      <strong>{String(valor)}</strong>
-                    </div>
-                  ))}
-                </article>
-              )}
             </div>
+
+            {comparativoHistoricoSelecionado.length > 0 && (
+              <section className="history-diff-panel" aria-label="Comparativo de alterações">
+                <header className="history-diff-head">
+                  <span>Campo</span>
+                  <span>Antes e agora</span>
+                </header>
+
+                <div className="history-diff-list">
+                  {comparativoHistoricoSelecionado.map((linha) => (
+                    <article
+                      className={`history-diff-row ${linha.mudou ? 'is-changed' : ''}`}
+                      key={`comparativo-${linha.chave}`}
+                    >
+                      <p className="history-diff-field">{linha.chave}</p>
+                      <div className="history-diff-track">
+                        <div className="history-diff-chip before">
+                          <span>Antes</span>
+                          <strong>{linha.antes}</strong>
+                        </div>
+
+                        <span className="history-diff-arrow" aria-hidden="true">
+                          →
+                        </span>
+
+                        <div className="history-diff-chip after">
+                          <span>Agora</span>
+                          <strong>{linha.depois}</strong>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {detalhesHistoricoSelecionado?.info && (
               <p className="history-details-info">{detalhesHistoricoSelecionado.info}</p>
@@ -2308,7 +2387,7 @@ function App() {
               className="toast-close"
               type="button"
               onClick={() => removerToast(toast.id)}
-              aria-label="Fechar notificacao"
+              aria-label="Fechar notificação"
             >
               ×
             </button>
